@@ -14,6 +14,9 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
-    return $request->user();
+Route::middleware('auth:sanctum')->group(function () {
+    // Tambahkan rute API yang memerlukan autentikasi di sini
+    Route::get('/user', function (Request $request) {
+        return $request->user();
+    });
 });

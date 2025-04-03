@@ -12,6 +12,8 @@ use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
 use Laravel\Fortify\Fortify;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Auth;
 
 class FortifyServiceProvider extends ServiceProvider
 {
@@ -41,6 +43,25 @@ class FortifyServiceProvider extends ServiceProvider
 
         RateLimiter::for('two-factor', function (Request $request) {
             return Limit::perMinute(5)->by($request->session()->get('login.id'));
+        });
+
+        // Customize login request to use 'username' instead of 'email'
+        Fortify::authenticateUsing(function (Request $request) {
+            $credentials = $request->validate([
+                'username' => ['required', 'string'],
+                'password' => ['required', 'string'],
+            ]);
+
+            if (Auth::attempt($credentials)) {
+                return Auth::user();
+            }
+
+            return null;
+        });
+
+        // Customize login view if necessary
+        Fortify::loginView(function () {
+            return view('auth.login');
         });
     }
 }
