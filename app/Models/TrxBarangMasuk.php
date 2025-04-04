@@ -13,8 +13,13 @@ class TrxBarangMasuk extends Model
     protected $primaryKey = 'id_trx_barang_masuk';
     protected $fillable = ['id_barang', 'tanggal_masuk', 'nama_supplier', 'jumlah', 'total_harga'];
 
+
     public function barang()
     {
-        return $this->belongsTo(Barang::class, 'id_barang');
+        return $this->hasMany(
+            Barang::class,
+            'id_barang',
+            'id_barang'
+        );
     }
 }

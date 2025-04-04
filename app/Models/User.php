@@ -12,11 +12,10 @@ class User extends Authenticatable
 
     protected $table = 'users';
     protected $primaryKey = 'id_user'; // Primary key baru
-    public $incrementing = false; // Karena id_user bukan auto-increment
-    protected $keyType = 'string'; // id_user adalah string
+    public $incrementing = true; // Karena id_user bukan auto-increment
 
     protected $fillable = [
-        'id_user',
+
         'nama_user',
         'level',
         'username',
