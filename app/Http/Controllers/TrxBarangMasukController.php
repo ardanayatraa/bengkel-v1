@@ -11,13 +11,13 @@ class TrxBarangMasukController extends Controller
     public function index()
     {
         $trxBarangMasuk = TrxBarangMasuk::with('barang')->get();
-        return view('TrxBarangMasuk.index', compact('trxBarangMasuk'));
+        return view('trx-barang-masuk.index', compact('trxBarangMasuk'));
     }
 
     public function create()
     {
         $barangs = Barang::all();
-        return view('TrxBarangMasuk.create', compact('barangs'));
+        return view('trx-barang-masuk.create', compact('barangs'));
     }
 
     public function store(Request $request)
@@ -38,7 +38,7 @@ class TrxBarangMasukController extends Controller
     {
         $trx = TrxBarangMasuk::findOrFail($id);
         $barangs = Barang::all();
-        return view('TrxBarangMasuk.edit', compact('trx', 'barangs'));
+        return view('trx-barang-masuk.edit', compact('trx', 'barangs'));
     }
 
     public function update(Request $request, string $id)
@@ -66,6 +66,6 @@ class TrxBarangMasukController extends Controller
     public function show(string $id)
     {
         $trxBarangMasuk = TrxBarangMasuk::with('barang')->findOrFail($id);
-        return view('TrxBarangMasuk.show', compact('trxBarangMasuk'));
+        return view('trx-barang-masuk.show', compact('trxBarangMasuk'));
     }
 }

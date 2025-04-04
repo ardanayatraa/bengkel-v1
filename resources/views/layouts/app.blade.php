@@ -141,7 +141,7 @@
                         </button>
 
                         <ul id="barangDropdown"
-                            class="mt-2 space-y-1 pl-14 {{ request()->is('barang*') || request()->is('trx-barang-masuk*') ? '' : 'hidden' }}">
+                            class="mt-2 space-y-1 {{ request()->is('barang*') || request()->is('trx-barang-masuk*') ? '' : 'hidden' }}">
                             <li>
                                 <a href="/barang"
                                     class="flex items-center px-2 py-2 ml-12 rounded-md text-sm {{ request()->is('barang*') ? 'text-red-700 bg-red-100 font-semibold' : 'text-gray-600 hover:bg-gray-100' }}">
@@ -314,7 +314,7 @@
                         </button>
 
                         <ul id="laporanMenuDropdown"
-                            class="mt-2 space-y-1 pl-14 {{ request()->is('laporan-jasa*') || request()->is('laporan-penjualan*') || request()->is('laporan-barang*') ? '' : 'hidden' }}">
+                            class="mt-2 space-y-1 {{ request()->is('laporan-jasa*') || request()->is('laporan-penjualan*') || request()->is('laporan-barang*') ? '' : 'hidden' }}">
                             <li>
                                 <a href="/laporan-jasa"
                                     class="flex items-center px-2 py-2 ml-12 rounded-md text-sm {{ request()->is('laporan-jasa*') ? 'text-red-700 bg-red-100 font-semibold' : 'text-gray-600 hover:bg-gray-100' }}">
