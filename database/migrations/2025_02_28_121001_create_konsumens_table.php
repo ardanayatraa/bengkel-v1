@@ -18,7 +18,7 @@ return new class extends Migration
             $table->string('no_telp')->nullable();
             $table->text('alamat')->nullable();
             $table->integer('jumlah_point')->default(0);
-            $table->text('keterangan')->nullable();
+            $table->string('keterangan')->nullable();
             $table->timestamps();
         });
     }

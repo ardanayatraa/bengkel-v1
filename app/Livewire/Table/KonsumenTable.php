@@ -2,9 +2,9 @@
 
 namespace App\Livewire\Table;
 
+use App\Models\Konsumen;
 use Rappasoft\LaravelLivewireTables\DataTableComponent;
 use Rappasoft\LaravelLivewireTables\Views\Column;
-use App\Models\Konsumen;
 
 class KonsumenTable extends DataTableComponent
 {
@@ -12,7 +12,7 @@ class KonsumenTable extends DataTableComponent
 
     public function configure(): void
     {
-        $this->setPrimaryKey('id');
+        $this->setPrimaryKey('id_konsumen');
     }
 
     public function columns(): array
@@ -36,6 +36,34 @@ class KonsumenTable extends DataTableComponent
                 ->sortable(),
             Column::make("Updated at", "updated_at")
                 ->sortable(),
+
+            Column::make('Member')->label(
+                function ($row) {
+                    if (strtolower($row->keterangan) === 'member') {
+                        return '<a href="' . route('konsumen.cetak-kartu', ['konsumen' => $row->id_konsumen]) . '"
+                                    class="px-2 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700"
+                                    target="_blank">
+                                    Cetak
+                                </a>';
+                    } else {
+                        return '<button disabled
+                                    class="px-2 py-1 bg-gray-300 text-gray-500 rounded text-xs cursor-not-allowed"
+                                    title="Hanya untuk member">
+                                    Cetak
+                                </button>';
+                    }
+                }
+            )->html(),
+
+            Column::make('Aksi')->label(
+                fn ($row) => view('components.table-actions', [
+                    'editRoute' => route('konsumen.edit', ['konsumen' => $row->id_konsumen]),
+                    'deleteRoute' => route('konsumen.destroy', ['konsumen' => $row->id_konsumen]),
+                    'modalId' => 'delete-konsumen-' . $row->id_konsumen,
+                ])
+            ),
+
+
         ];
     }
 }

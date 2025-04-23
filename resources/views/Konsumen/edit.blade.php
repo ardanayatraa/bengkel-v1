@@ -38,7 +38,7 @@
                         <div>
                             <label for="jumlah_point"
                                 class="block font-medium text-gray-700 dark:text-gray-300 mb-2">Jumlah Point</label>
-                            <input type="number" id="jumlah_point" name="jumlah_point"
+                            <input readonly type="number" id="jumlah_point" name="jumlah_point"
                                 value="{{ $konsumen->jumlah_point }}"
                                 class="block w-full border border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 rounded-lg p-2 transition">
                         </div>
@@ -51,11 +51,22 @@
                         </div>
 
                         <div class="md:col-span-2">
-                            <label for="keterangan"
-                                class="block font-medium text-gray-700 dark:text-gray-300 mb-2">Keterangan</label>
-                            <textarea id="keterangan" name="keterangan"
-                                class="block w-full border border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 rounded-lg p-2 transition">{{ $konsumen->keterangan }}</textarea>
+                            <label for="keterangan" class="block font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                Keterangan
+                            </label>
+                            <select id="keterangan" name="keterangan"
+                                class="block w-full border border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 rounded-lg p-2 transition">
+                                <option value="non-member"
+                                    {{ old('keterangan', $konsumen->keterangan ?? '') == 'non-member' ? 'selected' : '' }}>
+                                    NON-MEMBER
+                                </option>
+                                <option value="member"
+                                    {{ old('keterangan', $konsumen->keterangan ?? '') == 'member' ? 'selected' : '' }}>
+                                    MEMBER
+                                </option>
+                            </select>
                         </div>
+
                     </div>
 
                     <div class="mt-6 flex justify-between">

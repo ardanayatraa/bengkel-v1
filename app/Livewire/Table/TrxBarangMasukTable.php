@@ -2,9 +2,9 @@
 
 namespace App\Livewire\Table;
 
+use App\Models\TrxBarangMasuk;
 use Rappasoft\LaravelLivewireTables\DataTableComponent;
 use Rappasoft\LaravelLivewireTables\Views\Column;
-use App\Models\TrxBarangMasuk;
 
 class TrxBarangMasukTable extends DataTableComponent
 {
@@ -12,7 +12,7 @@ class TrxBarangMasukTable extends DataTableComponent
 
     public function configure(): void
     {
-        $this->setPrimaryKey('id');
+        $this->setPrimaryKey('id_trx_barang_masuk');
     }
 
     public function columns(): array
@@ -24,16 +24,18 @@ class TrxBarangMasukTable extends DataTableComponent
                 ->sortable(),
             Column::make("Tanggal masuk", "tanggal_masuk")
                 ->sortable(),
-            Column::make("Nama supplier", "nama_supplier")
-                ->sortable(),
             Column::make("Jumlah", "jumlah")
                 ->sortable(),
             Column::make("Total harga", "total_harga")
                 ->sortable(),
-            Column::make("Created at", "created_at")
-                ->sortable(),
-            Column::make("Updated at", "updated_at")
-                ->sortable(),
+
+            Column::make('Aksi')->label(
+                fn ($row) => view('components.table-actions', [
+                    'editRoute' => route('trx-barang-masuk.edit',$row->id_trx_barang_masuk),
+                    'deleteRoute' => route('trx-barang-masuk.destroy',$row->id_trx_barang_masuk),
+                    'modalId' => 'delete-trx-barang-masuk-' . $row->id_trx_barang_masuk,
+                ])
+            ),
         ];
     }
 }

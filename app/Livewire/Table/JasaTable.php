@@ -12,7 +12,7 @@ class JasaTable extends DataTableComponent
 
     public function configure(): void
     {
-        $this->setPrimaryKey('id');
+        $this->setPrimaryKey('id_jasa');
     }
 
     public function columns(): array
@@ -30,6 +30,16 @@ class JasaTable extends DataTableComponent
                 ->sortable(),
             Column::make("Updated at", "updated_at")
                 ->sortable(),
+
+                Column::make('Aksi')->label(
+                    fn ($row) => view('components.table-actions', [
+                        'editRoute' => route('jasa.edit', $row->id_jasa),
+                        'deleteRoute' => route('jasa.destroy', $row->id_jasa),
+                        'modalId' => 'delete-jasa-' . $row->id_jasa,
+                    ])
+                ),
+
+
         ];
     }
 }

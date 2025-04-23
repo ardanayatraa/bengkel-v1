@@ -2,9 +2,9 @@
 
 namespace App\Livewire\Table;
 
+use App\Models\Supplier;
 use Rappasoft\LaravelLivewireTables\DataTableComponent;
 use Rappasoft\LaravelLivewireTables\Views\Column;
-use App\Models\Supplier;
 
 class SupplierTable extends DataTableComponent
 {
@@ -12,7 +12,7 @@ class SupplierTable extends DataTableComponent
 
     public function configure(): void
     {
-        $this->setPrimaryKey('id');
+        $this->setPrimaryKey('id_supplier');
     }
 
     public function columns(): array
@@ -26,10 +26,13 @@ class SupplierTable extends DataTableComponent
                 ->sortable(),
             Column::make("Alamat", "alamat")
                 ->sortable(),
-            Column::make("Created at", "created_at")
-                ->sortable(),
-            Column::make("Updated at", "updated_at")
-                ->sortable(),
+            Column::make('Aksi')->label(
+                fn ($row) => view('components.table-actions', [
+                    'editRoute' => route('supplier.edit', ['supplier' => $row->id_supplier]),
+                    'deleteRoute' => route('supplier.destroy', ['supplier' => $row->id_supplier]),
+                    'modalId' => 'delete-supplier-' . $row->id_supplier,
+                ])
+            ),
         ];
     }
 }

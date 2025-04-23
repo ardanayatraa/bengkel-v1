@@ -9,8 +9,8 @@ class JasaController extends Controller
 {
     public function index()
     {
-        $jasas = Jasa::all();
-        return view('jasa.index', compact('jasas'));
+        $jasa = Jasa::all();
+        return view('jasa.index', compact('jasa'));
     }
 
     public function create()
@@ -27,7 +27,7 @@ class JasaController extends Controller
         ]);
 
         Jasa::create($validatedData);
-        return redirect()->route('jasas.index')->with('success', 'Jasa created successfully.');
+        return redirect()->route('jasa.index')->with('success', 'Jasa created successfully.');
     }
 
     public function edit(string $id)
@@ -46,13 +46,13 @@ class JasaController extends Controller
 
         $jasa = Jasa::findOrFail($id);
         $jasa->update($validatedData);
-        return redirect()->route('jasas.index')->with('success', 'Jasa updated successfully.');
+        return redirect()->route('jasa.index')->with('success', 'Jasa updated successfully.');
     }
 
     public function destroy(string $id)
     {
         $jasa = Jasa::findOrFail($id);
         $jasa->delete();
-        return redirect()->route('jasas.index')->with('success', 'Jasa deleted successfully.');
+        return redirect()->route('jasa.index')->with('success', 'Jasa deleted successfully.');
     }
 }

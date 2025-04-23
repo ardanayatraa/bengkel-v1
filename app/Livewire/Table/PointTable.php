@@ -2,9 +2,9 @@
 
 namespace App\Livewire\Table;
 
+use App\Models\Point;
 use Rappasoft\LaravelLivewireTables\DataTableComponent;
 use Rappasoft\LaravelLivewireTables\Views\Column;
-use App\Models\Point;
 
 class PointTable extends DataTableComponent
 {
@@ -12,7 +12,7 @@ class PointTable extends DataTableComponent
 
     public function configure(): void
     {
-        $this->setPrimaryKey('id');
+        $this->setPrimaryKey('id_point');
     }
 
     public function columns(): array
@@ -30,6 +30,14 @@ class PointTable extends DataTableComponent
                 ->sortable(),
             Column::make("Updated at", "updated_at")
                 ->sortable(),
+
+            Column::make('Aksi')->label(
+                fn ($row) => view('components.table-actions', [
+                    'editRoute' => route('point.edit', ['point' => $row->id_point]),
+                    'deleteRoute' => route('point.destroy', ['point' => $row->id_point]),
+                    'modalId' => 'delete-point-' . $row->id_point,
+                ])
+            ),
         ];
     }
 }

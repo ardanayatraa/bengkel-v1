@@ -1,8 +1,9 @@
 <?php
 
 namespace App\Http\Controllers;
-
+use Barryvdh\DomPDF\Facade\Pdf;
 use App\Models\Barang;
+use App\Models\Supplier;
 use App\Models\TrxBarangMasuk;
 use Illuminate\Http\Request;
 
@@ -17,7 +18,8 @@ class TrxBarangMasukController extends Controller
     public function create()
     {
         $barangs = Barang::all();
-        return view('trx-barang-masuk.create', compact('barangs'));
+        $suppliers = Supplier::all();
+        return view('trx-barang-masuk.create', compact('barangs','suppliers'));
     }
 
     public function store(Request $request)
@@ -25,7 +27,6 @@ class TrxBarangMasukController extends Controller
         $validatedData = $request->validate([
             'id_barang' => 'required|integer|exists:barangs,id_barang',
             'tanggal_masuk' => 'required|date',
-            'nama_supplier' => 'required|string|max:255',
             'jumlah' => 'required|integer|min:1',
             'total_harga' => 'required|numeric|min:0',
         ]);
@@ -46,7 +47,7 @@ class TrxBarangMasukController extends Controller
         $validatedData = $request->validate([
             'id_barang' => 'required|integer|exists:barangs,id_barang',
             'tanggal_masuk' => 'required|date',
-            'nama_supplier' => 'required|string|max:255',
+
             'jumlah' => 'required|integer|min:1',
             'total_harga' => 'required|numeric|min:0',
         ]);
@@ -65,7 +66,15 @@ class TrxBarangMasukController extends Controller
 
     public function show(string $id)
     {
-        $trxBarangMasuk = TrxBarangMasuk::with('barang')->findOrFail($id);
-        return view('trx-barang-masuk.show', compact('trxBarangMasuk'));
+        $trx = TrxBarangMasuk::with('barang.supplier')->findOrFail($id);
+        return view('trx-barang-masuk.show', compact('trx'));
     }
+
+    public function cetak(string $id)
+{
+    $trx = TrxBarangMasuk::with('barang.supplier')->findOrFail($id);
+    $pdf = Pdf::loadView('trx-barang-masuk.cetak', compact('trx'))->setPaper('A4');
+    return $pdf->stream('transaksi-barang-masuk-'.$id.'.pdf');
+}
+
 }

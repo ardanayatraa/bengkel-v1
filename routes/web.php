@@ -1,11 +1,16 @@
 <?php
+
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\{
     BarangController,
+    DashboardController,
     DetailTransaksiController,
     JasaController,
     KategoriController,
     KonsumenController,
+    LaporanBarangController,
+    LaporanJasaController,
+    LaporanPenjualanController,
     PointController,
     SupplierController,
     TransaksiController,
@@ -13,50 +18,72 @@ use App\Http\Controllers\{
     UserController
 };
 
-/*
-|--------------------------------------------------------------------------
-| Web Routes
-|--------------------------------------------------------------------------
-|
-| Here is where you can register web routes for your application. These
-| routes are loaded by the RouteServiceProvider and all of them will
-| be assigned to the "web" middleware group. Make something great!
-|
-*/
-
 Route::get('/', function () {
     return view('welcome');
 });
 
 Route::middleware(['auth'])->group(function () {
-    Route::get('/dashboard', function () {
-        return view('dashboard');
-    })->name('dashboard');
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
-    Route::resources([
-        'barang' => BarangController::class,
-        'detail-transaksi' => DetailTransaksiController::class,
-        'jasa' => JasaController::class,
-        'kategori' => KategoriController::class,
-        'konsumen' => KonsumenController::class,
-        'point' => PointController::class,
-        'supplier' => SupplierController::class,
-        'transaksi' => TransaksiController::class,
-        'trx-barang-masuk' => TrxBarangMasukController::class,
-        'user' => UserController::class,
+    // Resource routes dengan parameter disesuaikan
+    Route::resource('barang', BarangController::class)->parameters([
+        'barang' => 'barang'
     ]);
 
-    Route::prefix('laporan')->group(function () {
-        Route::get('/jasa', function () {
-            return 1;
-        })->name('laporan.jasa');
+    Route::resource('detail-transaksi', DetailTransaksiController::class)->parameters([
+        'detail-transaksi' => 'detail_transaksi'
+    ]);
 
-        Route::get('/penjualan', function () {
-            return 1;
-        })->name('laporan.penjualan');
+    Route::resource('jasa', JasaController::class)->parameters([
+        'jasa' => 'jasa'
+    ]);
 
-        Route::get('/barang', function () {
-            return 1;
-        })->name('laporan.barang');
-    });
+    Route::resource('kategori', KategoriController::class)->parameters([
+        'kategori' => 'kategori'
+    ]);
+
+    Route::resource('konsumen', KonsumenController::class)->parameters([
+        'konsumen' => 'konsumen'
+    ]);
+
+    Route::get('konsumen/{konsumen}/cetak-kartu', [App\Http\Controllers\KonsumenController::class, 'cetakKartu'])
+    ->name('konsumen.cetak-kartu');
+
+
+    Route::resource('point', PointController::class)->parameters([
+        'point' => 'point'
+    ]);
+
+    Route::resource('supplier', SupplierController::class)->parameters([
+        'supplier' => 'supplier'
+    ]);
+
+    Route::resource('transaksi', TransaksiController::class)->parameters([
+        'transaksi' => 'transaksi'
+    ]);
+
+    Route::resource('trx-barang-masuk', TrxBarangMasukController::class)->parameters([
+        'trx-barang-masuk' => 'trx_barang_masuk'
+    ]);
+
+    Route::get('trx-barang-masuk/{id}/cetak', [TrxBarangMasukController::class, 'cetak'])->name('trx-barang-masuk.cetak');
+
+
+    Route::resource('user', UserController::class)->parameters([
+        'user' => 'user'
+    ]);
+
+    // Group laporan
+
+
+    Route::get('/laporan/jasa', [LaporanJasaController::class, 'index'])->name('laporan.jasa');
+    Route::get('/laporan/jasa/pdf', [LaporanJasaController::class, 'exportPdf'])->name('laporan.jasa.pdf');
+
+    Route::get('/laporan/barang', [LaporanBarangController::class, 'index'])->name('laporan.barang');
+Route::get('/laporan/barang/pdf', [LaporanBarangController::class, 'exportPdf'])->name('laporan.barang.pdf');
+
+
+Route::get('/laporan/penjualan', [LaporanPenjualanController::class, 'index'])->name('laporan.penjualan');
+Route::get('/laporan/penjualan/pdf', [LaporanPenjualanController::class, 'exportPdf'])->name('laporan.penjualan.pdf');
+
 });

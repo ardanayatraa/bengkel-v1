@@ -14,6 +14,7 @@ return new class extends Migration
         Schema::create('points', function (Blueprint $table) {
             $table->id('id_point');
             $table->unsignedBigInteger('id_konsumen');
+            $table->unsignedBigInteger('id_transaksi');
             $table->date('tanggal');
             $table->integer('jumlah_point');
             $table->timestamps();

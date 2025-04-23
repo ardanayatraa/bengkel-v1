@@ -1,44 +1,36 @@
-<x-guest-layout>
-    <x-authentication-card>
-        <x-slot name="logo">
-            <x-authentication-card-logo />
-        </x-slot>
+<!DOCTYPE html>
+<html lang="en">
 
-        <x-validation-errors class="mb-4" />
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login Page</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
 
-        @if (session('status'))
-            <div class="mb-4 font-medium text-sm text-green-600">
-                {{ session('status') }}
-            </div>
-        @endif
-
-        <form method="POST" action="{{ route('login') }}">
+<body class="min-h-screen flex items-center justify-center bg-gradient-to-r from-red-900 via-red-700 to-red-500">
+    <div class="w-full max-w-sm p-6 bg-white rounded-2xl shadow-2xl">
+        <h2 class="text-3xl font-bold text-center text-red-900 mb-6">Login</h2>
+        <form class="space-y-5" method="POST" action="{{ route('login') }}">
             @csrf
-
             <div>
-                <x-label for="username" value="{{ __('Username') }}" />
-                <x-input id="username" class="block mt-1 w-full" type="text" name="username" :value="old('username')" required
-                    autofocus autocomplete="username" />
+                <label class="block mb-1 text-sm font-medium text-gray-700" for="username">Username</label>
+                <input type="text" id="username" name="username" placeholder="Enter your username"
+                    class="w-full px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-600 transition" />
+            </div>
+            <div>
+                <label class="block mb-1 text-sm font-medium text-gray-700" for="password">Password</label>
+                <input type="password" id="password" placeholder="••••••••" name="password"
+                    class="w-full px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-600 transition" />
             </div>
 
-            <div class="mt-4">
-                <x-label for="password" value="{{ __('Password') }}" />
-                <x-input id="password" class="block mt-1 w-full" type="password" name="password" required
-                    autocomplete="current-password" />
-            </div>
-
-            <div class="block mt-4">
-                <label for="remember_me" class="flex items-center">
-                    <x-checkbox id="remember_me" name="remember" />
-                    <span class="ms-2 text-sm text-gray-600">{{ __('Remember me') }}</span>
-                </label>
-            </div>
-
-            <div class="flex items-center justify-end mt-4">
-                <x-button class="ms-4">
-                    {{ __('Log in') }}
-                </x-button>
-            </div>
+            <button type="submit"
+                class="w-full bg-red-700 hover:bg-red-800 text-white font-semibold py-2 rounded-xl transition duration-300">
+                Sign In
+            </button>
         </form>
-    </x-authentication-card>
-</x-guest-layout>
+
+    </div>
+</body>
+
+</html>

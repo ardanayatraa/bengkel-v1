@@ -2,9 +2,9 @@
 
 namespace App\Livewire\Table;
 
+use App\Models\User;
 use Rappasoft\LaravelLivewireTables\DataTableComponent;
 use Rappasoft\LaravelLivewireTables\Views\Column;
-use App\Models\User;
 
 class UsersTable extends DataTableComponent
 {
@@ -20,8 +20,6 @@ class UsersTable extends DataTableComponent
         return [
             Column::make("Id user", "id_user")
                 ->sortable(),
-            Column::make("Id user", "id_user")
-                ->sortable(),
             Column::make("Nama user", "nama_user")
                 ->sortable(),
             Column::make("Level", "level")
@@ -32,6 +30,14 @@ class UsersTable extends DataTableComponent
                 ->sortable(),
             Column::make("Updated at", "updated_at")
                 ->sortable(),
+
+            Column::make('Aksi')->label(
+                fn ($row) => view('components.table-actions', [
+                    'editRoute' => route('user.edit', ['user' => $row->id_user]),
+                    'deleteRoute' => route('user.destroy', ['user' => $row->id_user]),
+                    'modalId' => 'delete-user-' . $row->id_user,
+                ])
+            ),
         ];
     }
 }

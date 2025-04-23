@@ -61,4 +61,11 @@ class KonsumenController extends Controller
         $konsumen->delete();
         return redirect()->route('konsumen.index')->with('success', 'Konsumen deleted successfully.');
     }
+
+    public function cetakKartu(\App\Models\Konsumen $konsumen)
+{
+    
+    return view('konsumen.cetak-kartu', compact('konsumen'));
+}
+
 }

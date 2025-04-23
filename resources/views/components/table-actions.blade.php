@@ -16,7 +16,7 @@
     <div id="deleteModalBox"
         class="bg-white rounded-2xl p-6 w-[90%] max-w-[400px] shadow-xl scale-95 opacity-0 transform transition-all duration-300 relative">
         <h2 class="text-lg font-semibold mb-4">Konfirmasi Hapus</h2>
-        <p class="text-sm text-gray-600 mb-6">Yakin mau hapus data ini? Tindakan ini tidak bisa dibatalkan.</p>
+        <p class="text-sm text-gray-600 mb-6">Yakin mau hapus data ini? </p>
 
         <div class="flex justify-end space-x-3">
             <button class="px-4 py-2 bg-gray-200 text-gray-800 rounded-xl hover:bg-gray-300"

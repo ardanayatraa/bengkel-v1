@@ -22,5 +22,14 @@ class UserSeeder extends Seeder
             'created_at' => now(),
             'updated_at' => now(),
         ]);
+        DB::table('users')->insert([
+            'id_user' => '2',
+            'nama_user' => 'Kasir',
+            'level' => 'kasir',
+            'username' => 'kasir',
+            'password' => Hash::make('password123'), // Pastikan password di-hash
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
     }
 }

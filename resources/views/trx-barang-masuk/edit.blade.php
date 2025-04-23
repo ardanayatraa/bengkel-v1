@@ -5,23 +5,30 @@
                 Edit Barang Masuk
             </h2>
         </div>
+
         <div class="bg-white border dark:bg-gray-800 sm:rounded-lg p-6">
             <form action="{{ route('trx-barang-masuk.update', $trx->id_trx_barang_masuk) }}" method="POST">
                 @csrf
                 @method('PUT')
+
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {{-- Barang --}}
                     <div>
                         <label for="id_barang" class="block mb-2 text-gray-700 dark:text-gray-300">Barang</label>
                         <select name="id_barang" id="id_barang"
                             class="w-full rounded-lg p-2 border dark:bg-gray-900 dark:text-gray-200 focus:ring-red-500 focus:border-red-500 transition"
                             required>
                             @foreach ($barangs as $barang)
-                                <option value="{{ $barang->id_barang }}" @selected($trx->id_barang == $barang->id_barang)>
-                                    {{ $barang->nama_barang }}
+                                <option value="{{ $barang->id_barang }}" data-harga="{{ $barang->harga_beli }}"
+                                    @selected($trx->id_barang == $barang->id_barang)>
+                                    {{ $barang->nama_barang }} - Supplier [ {{ $barang->supplier->nama_supplier }} ] -
+                                    Rp{{ number_format($barang->harga_beli, 0, ',', '.') }}
                                 </option>
                             @endforeach
                         </select>
                     </div>
+
+                    {{-- Tanggal Masuk --}}
                     <div>
                         <label for="tanggal_masuk" class="block mb-2 text-gray-700 dark:text-gray-300">Tanggal
                             Masuk</label>
@@ -30,28 +37,32 @@
                             class="w-full rounded-lg p-2 border dark:bg-gray-900 dark:text-gray-200 focus:ring-red-500 focus:border-red-500 transition"
                             required>
                     </div>
-                    <div>
-                        <label for="nama_supplier" class="block mb-2 text-gray-700 dark:text-gray-300">Nama
-                            Supplier</label>
-                        <input type="text" name="nama_supplier" id="nama_supplier"
-                            value="{{ old('nama_supplier', $trx->nama_supplier) }}"
-                            class="w-full rounded-lg p-2 border dark:bg-gray-900 dark:text-gray-200 focus:ring-red-500 focus:border-red-500 transition"
-                            required>
-                    </div>
+
+                    {{-- Jumlah --}}
                     <div>
                         <label for="jumlah" class="block mb-2 text-gray-700 dark:text-gray-300">Jumlah</label>
                         <input type="number" name="jumlah" id="jumlah" value="{{ old('jumlah', $trx->jumlah) }}"
                             class="w-full rounded-lg p-2 border dark:bg-gray-900 dark:text-gray-200 focus:ring-red-500 focus:border-red-500 transition"
                             required>
                     </div>
+
+                    {{-- Total Harga (otomatis + hidden) --}}
                     <div>
-                        <label for="total_harga" class="block mb-2 text-gray-700 dark:text-gray-300">Total Harga</label>
-                        <input type="number" name="total_harga" id="total_harga"
-                            value="{{ old('total_harga', $trx->total_harga) }}"
-                            class="w-full rounded-lg p-2 border dark:bg-gray-900 dark:text-gray-200 focus:ring-red-500 focus:border-red-500 transition"
-                            required>
+                        <label for="total_harga_view" class="block mb-2 text-gray-700 dark:text-gray-300">Total
+                            Harga</label>
+
+                        {{-- Tampil Rupiah --}}
+                        <input type="text" id="total_harga_view" readonly
+                            class="w-full rounded-lg p-2 bg-gray-100 border dark:bg-gray-800 dark:text-gray-400 focus:ring-red-500 focus:border-red-500 transition"
+                            value="{{ 'Rp' . number_format($trx->total_harga, 0, ',', '.') }}">
+
+                        {{-- Hidden nilai asli untuk disimpan --}}
+                        <input type="hidden" name="total_harga" id="total_harga"
+                            value="{{ old('total_harga', $trx->total_harga) }}">
                     </div>
                 </div>
+
+                {{-- Tombol --}}
                 <div class="mt-6 flex justify-end gap-2">
                     <a href="{{ route('trx-barang-masuk.index') }}"
                         class="bg-gray-200 text-gray-800 hover:bg-gray-300 px-4 py-2 rounded-lg transition">
@@ -65,4 +76,39 @@
             </form>
         </div>
     </div>
+
+    {{-- Script: Hitung Total Harga dan Format Rupiah --}}
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const barangSelect = document.getElementById('id_barang');
+            const jumlahInput = document.getElementById('jumlah');
+            const totalHargaInput = document.getElementById('total_harga');
+            const totalHargaView = document.getElementById('total_harga_view');
+
+            function formatRupiah(angka) {
+                return new Intl.NumberFormat('id-ID', {
+                    style: 'currency',
+                    currency: 'IDR',
+                    minimumFractionDigits: 0
+                }).format(angka);
+            }
+
+            function hitungTotal() {
+                const selectedOption = barangSelect.options[barangSelect.selectedIndex];
+                const hargaBeli = parseFloat(selectedOption.getAttribute('data-harga')) || 0;
+                const jumlah = parseInt(jumlahInput.value) || 0;
+                const total = hargaBeli * jumlah;
+
+                totalHargaInput.value = total;
+                totalHargaView.value = total ? formatRupiah(total) : '';
+            }
+
+            // Inisialisasi saat halaman pertama dibuka
+            hitungTotal();
+
+            // Event listener saat barang/jumlah diubah
+            barangSelect.addEventListener('change', hitungTotal);
+            jumlahInput.addEventListener('input', hitungTotal);
+        });
+    </script>
 </x-app-layout>
