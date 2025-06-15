@@ -19,21 +19,33 @@ class TrxBarangMasukTable extends DataTableComponent
     {
         return [
             Column::make("Id trx barang masuk", "id_trx_barang_masuk")
+                ->sortable()
+                ->format(
+                    fn($value, $row, Column $column) =>
+                        '<a href="'.route('trx-barang-masuk.show', $value).'" class="text-blue-600 hover:underline">'.$value.'</a>'
+                )
+                ->html(),  // jangan lupa ini biar HTML-nya di-render
+
+            Column::make("Barang", "barang.nama_barang")
                 ->sortable(),
-            Column::make("Id barang", "id_barang")
+
+            Column::make("Supplier", "barang.supplier.nama_supplier")
                 ->sortable(),
+
             Column::make("Tanggal masuk", "tanggal_masuk")
                 ->sortable(),
+
             Column::make("Jumlah", "jumlah")
                 ->sortable(),
+
             Column::make("Total harga", "total_harga")
                 ->sortable(),
 
             Column::make('Aksi')->label(
                 fn ($row) => view('components.table-actions', [
-                    'editRoute' => route('trx-barang-masuk.edit',$row->id_trx_barang_masuk),
-                    'deleteRoute' => route('trx-barang-masuk.destroy',$row->id_trx_barang_masuk),
-                    'modalId' => 'delete-trx-barang-masuk-' . $row->id_trx_barang_masuk,
+                    'editRoute'   => route('trx-barang-masuk.edit', $row->id_trx_barang_masuk),
+                    'deleteRoute' => route('trx-barang-masuk.destroy', $row->id_trx_barang_masuk),
+                    'modalId'     => 'delete-trx-barang-masuk-' . $row->id_trx_barang_masuk,
                 ])
             ),
         ];

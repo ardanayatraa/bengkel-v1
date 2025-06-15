@@ -15,15 +15,28 @@ class BarangTable extends DataTableComponent
         $this->setPrimaryKey('id_barang');
     }
 
+    // Eager load relasi untuk mencegah N+1 problem
+    public function query()
+    {
+        return Barang::query()->with(['supplier', 'kategori']);
+    }
+
     public function columns(): array
     {
         return [
-            Column::make("Id barang", "id_barang")->sortable(),
-            Column::make("Id supplier", "id_supplier")->sortable(),
-            Column::make("Id kategori", "id_kategori")->sortable(),
-            Column::make("Nama barang", "nama_barang")->sortable(),
-            Column::make("Harga beli", "harga_beli")->sortable(),
-            Column::make("Harga jual", "harga_jual")->sortable(),
+            Column::make("Id Barang", "id_barang")->sortable(),
+
+            // Tampilkan nama supplier, bukan id
+            Column::make("Supplier", "supplier.nama_supplier")
+                ->sortable(),
+
+            // Tampilkan nama kategori, bukan id
+            Column::make("Kategori", "kategori.nama_kategori")
+                ->sortable(),
+
+            Column::make("Nama Barang", "nama_barang")->sortable(),
+            Column::make("Harga Beli", "harga_beli")->sortable(),
+            Column::make("Harga Jual", "harga_jual")->sortable(),
             Column::make("Stok", "stok")->sortable(),
             Column::make("Keterangan", "keterangan")->sortable(),
 
@@ -34,7 +47,6 @@ class BarangTable extends DataTableComponent
                     'modalId' => 'delete-barang-' . $row->id_barang,
                 ])
             ),
-
         ];
     }
 }

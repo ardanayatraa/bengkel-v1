@@ -11,23 +11,22 @@ class BarangController extends Controller
 {
     public function index()
     {
-        $barang = Barang::all();
-        return view('barang.index', compact('barang'));
+        // Livewire table akan handle tampilannya
+        return view('barang.index');
     }
 
     public function create()
     {
         $suppliers = Supplier::all();
         $kategoris = Kategori::all();
-
         return view('barang.create', compact('suppliers', 'kategoris'));
     }
 
     public function store(Request $request)
     {
         $validatedData = $request->validate([
-            'id_supplier' => 'required|integer',
-            'id_kategori' => 'required|integer',
+            'id_supplier' => 'required|integer|exists:suppliers,id_supplier',
+            'id_kategori' => 'required|integer|exists:kategoris,id_kategori',
             'nama_barang' => 'required|string|max:255',
             'harga_beli' => 'required|numeric',
             'harga_jual' => 'required|numeric',
@@ -40,17 +39,18 @@ class BarangController extends Controller
     }
 
     public function edit(string $id)
-    {   $suppliers = Supplier::all();
+    {
         $barang = Barang::findOrFail($id);
+        $suppliers = Supplier::all();
         $kategoris = Kategori::all();
-        return view('barang.edit', compact('barang','suppliers', 'kategoris'));
+        return view('barang.edit', compact('barang', 'suppliers', 'kategoris'));
     }
 
     public function update(Request $request, string $id)
     {
         $validatedData = $request->validate([
-            'id_supplier' => 'required|integer',
-            'id_kategori' => 'required|integer',
+            'id_supplier' => 'required|integer|exists:suppliers,id_supplier',
+            'id_kategori' => 'required|integer|exists:kategoris,id_kategori',
             'nama_barang' => 'required|string|max:255',
             'harga_beli' => 'required|numeric',
             'harga_jual' => 'required|numeric',
