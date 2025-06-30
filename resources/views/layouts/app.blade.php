@@ -293,7 +293,7 @@
                         </li>
 
                         {{-- Point --}}
-                        <li class="relative">
+                        {{-- <li class="relative">
                             <a href="/point"
                                 class="flex items-center px-4 py-3 {{ request()->is('point*') ? 'text-red-800 bg-white' : 'text-gray-800' }} rounded-md relative z-10">
                                 <div
@@ -306,7 +306,7 @@
                                 </div>
                                 <span class="font-medium">Point</span>
                             </a>
-                        </li>
+                        </li> --}}
                     @endif
 
 
