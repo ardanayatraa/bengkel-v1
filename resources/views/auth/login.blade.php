@@ -13,7 +13,7 @@
 
         <!-- Logo -->
         <div class="flex justify-center mb-6">
-            <img src="{{ asset('logo.png') }}" alt="Logo" class="h-16 w-auto">
+            <img src="{{ asset('/asstes/img/logo.png') }}" alt="Logo" class="h-16 w-auto">
         </div>
 
         <h2 class="text-3xl font-bold text-center text-red-900 mb-6">Login</h2>
