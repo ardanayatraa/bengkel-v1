@@ -1,7 +1,7 @@
 <x-app-layout>
     <div class="mx-auto sm:px-6 lg:px-8 py-6">
         <h2 class="text-lg font-semibold border py-4 pl-6 pr-8 text-red-800 flex items-center gap-2 mb-4">
-            Tambah Transaksi
+            Tambah Transaksia
         </h2>
         <div class="bg-white border dark:bg-gray-800 sm:rounded-lg p-6">
             <form action="{{ route('transaksi.store') }}" method="POST">
@@ -108,5 +108,26 @@
         </div>
     </div>
 
+    <script>
+        function formatRupiah(n) {
+            return 'Rp ' + n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+        }
 
+        function calc() {
+            let sum = 0;
+            document.querySelectorAll('input[name="id_barang[]"]:checked').forEach(o => sum += +o.dataset.harga);
+            document.querySelectorAll('input[name="id_jasa[]"]:checked').forEach(o => sum += +o.dataset.harga);
+            const kons = document.querySelector('#id_konsumen option:checked');
+            const member = kons.dataset.keterangan === 'member';
+            const pts = +kons.dataset.point;
+            if (member && pts >= 10) sum -= 10000;
+            document.getElementById('estimasi_wrapper').classList.toggle('hidden', document.querySelectorAll(
+                'input[name="id_jasa[]"]:checked').length === 0);
+            document.getElementById('total_harga').value = sum;
+            document.getElementById('total_harga_display').value = formatRupiah(sum);
+        }
+        document.querySelectorAll('#id_konsumen,input[name="id_barang[]"],input[name="id_jasa[]"]').forEach(e => e
+            .addEventListener('change', calc));
+        window.addEventListener('load', calc);
+    </script>
 </x-app-layout>

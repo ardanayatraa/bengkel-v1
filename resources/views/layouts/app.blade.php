@@ -438,29 +438,6 @@
             mobileMenu.classList.toggle('flex');
         }
     </script>
-
-    <script>
-        function formatRupiah(n) {
-            return 'Rp ' + n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-        }
-
-        function calc() {
-            let sum = 0;
-            document.querySelectorAll('input[name="id_barang[]"]:checked').forEach(o => sum += +o.dataset.harga);
-            document.querySelectorAll('input[name="id_jasa[]"]:checked').forEach(o => sum += +o.dataset.harga);
-            const kons = document.querySelector('#id_konsumen option:checked');
-            const member = kons.dataset.keterangan === 'member';
-            const pts = +kons.dataset.point;
-            if (member && pts >= 10) sum -= 10000;
-            document.getElementById('estimasi_wrapper').classList.toggle('hidden', document.querySelectorAll(
-                'input[name="id_jasa[]"]:checked').length === 0);
-            document.getElementById('total_harga').value = sum;
-            document.getElementById('total_harga_display').value = formatRupiah(sum);
-        }
-        document.querySelectorAll('#id_konsumen,input[name="id_barang[]"],input[name="id_jasa[]"]').forEach(e => e
-            .addEventListener('change', calc));
-        window.addEventListener('load', calc);
-    </script>
     <!-- Adds the Core Table Scripts -->
     @rappasoftTableScripts
 
