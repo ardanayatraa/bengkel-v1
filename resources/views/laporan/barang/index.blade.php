@@ -21,8 +21,7 @@
         <!-- Filter (jika perlu) -->
         <div class="flex flex-wrap gap-4 mb-4">
             <form method="GET" action="{{ route('laporan.barang') }}" class="flex items-center gap-2">
-                <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari Konsumen..."
-                    class="px-4 py-2 border rounded-md w-48 focus:ring-2 focus:ring-gray-200">
+
                 <input type="date" name="start_date" value="{{ request('start_date') }}"
                     class="px-3 py-2 border rounded-md text-sm">
                 <span class="text-gray-500">-</span>
