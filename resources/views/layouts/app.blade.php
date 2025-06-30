@@ -170,7 +170,6 @@
                                     </a>
                             </ul>
                         </li>
-
                         {{-- User --}}
                         <li class="relative">
                             <a href="/user"
@@ -184,6 +183,23 @@
                                     </svg>
                                 </div>
                                 <span class="font-medium">User</span>
+                            </a>
+                        </li>
+
+
+                        {{-- Teknisi --}}
+                        <li class="relative">
+                            <a href="/teknisi"
+                                class="flex items-center px-4 py-3 {{ request()->is('teknisi*') ? 'text-red-800 bg-white' : 'text-gray-800' }} rounded-md relative z-10">
+                                <div
+                                    class="p-1.5 rounded-full mr-3 {{ request()->is('teknisi*') ? 'bg-red-700' : 'bg-gray-400' }}">
+                                    <svg class="w-4 h-4 {{ request()->is('teknisi*') ? 'text-white' : 'text-gray-800' }}"
+                                        fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M12 8a3 3 0 11-6 0 3 3 0 016 0zm6.364 9.364A10.97 10.97 0 0112 15c-2.21 0-4.253.64-5.879 1.804m11.243-.44A10.97 10.97 0 0112 21c-2.21 0-4.253-.64-5.879-1.804m11.243-.44A10.97 10.97 0 0112 21c2.21 0 4.253-.64 5.879-1.804m0-7.192A10.97 10.97 0 0112 15c2.21 0 4.253-.64 5.879-1.804m0-7.192A10.97 10.97 0 0112 9c2.21 0 4.253-.64 5.879-1.804m0-7.192A10.97 10.97 0 0112 .001c2.21-.001 4.253-.64 5.879-1.804" />
+                                    </svg>
+                                </div>
+                                <span class="font-medium">Teknisi</span>
                             </a>
                         </li>
 
@@ -240,7 +256,7 @@
 
 
 
-                    @if (auth()->user()->level == 'kasir')
+                    @if (auth()->user()->level == 'kasir' || auth()->user()->level == 'admin')
                         {{-- Konsumen --}}
                         <li class="relative">
                             <a href="/konsumen"

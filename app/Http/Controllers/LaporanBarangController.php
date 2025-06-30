@@ -4,69 +4,107 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Transaksi;
+use App\Models\Barang;
+use App\Models\TrxBarangMasuk;
 use Carbon\Carbon;
 use Barryvdh\DomPDF\Facade\Pdf;
 
 class LaporanBarangController extends Controller
 {
+    /**
+     * Tampilkan halaman laporan barang dengan ringkasan stok.
+     */
     public function index(Request $request)
     {
-        $start = $request->input('start_date');
-        $end = $request->input('end_date');
+        $start  = $request->input('start_date');
+        $end    = $request->input('end_date');
         $search = $request->input('search');
 
-        $query = Transaksi::with(['konsumen', 'barang'])
-            ->whereNotNull('id_barang');
+        // Query transaksi yang punya barang (JSON-array id_barang)
+        $transaksiQuery = Transaksi::with('konsumen')
+            ->whereJsonLength('id_barang', '>', 0)
+            ->when($start, fn($q) => $q->whereDate('tanggal_transaksi','>=',$start))
+            ->when($end,   fn($q) => $q->whereDate('tanggal_transaksi','<=',$end))
+            ->when($search, fn($q) =>
+                $q->whereHas('konsumen', fn($q2) =>
+                    $q2->where('nama_konsumen','like',"%{$search}%")
+                )
+            );
 
-        if ($start) {
-            $query->whereDate('tanggal_transaksi', '>=', $start);
-        }
+        $transaksis = $transaksiQuery
+            ->orderByDesc('tanggal_transaksi')
+            ->paginate(10)
+            ->appends(compact('start','end','search'));
 
-        if ($end) {
-            $query->whereDate('tanggal_transaksi', '<=', $end);
-        }
+        // Ringkasan stok per barang
+        $stockSummary = Barang::all()->map(function($b) use($start,$end) {
+            // Masuk dari trx_barang_masuks
+            $masuk = TrxBarangMasuk::where('id_barang',$b->id_barang)
+                ->when($start, fn($q)=> $q->whereDate('tanggal_masuk','>=',$start))
+                ->when($end,   fn($q)=> $q->whereDate('tanggal_masuk','<=',$end))
+                ->sum('jumlah');
 
-        if ($search) {
-            $query->whereHas('konsumen', function ($q) use ($search) {
-                $q->whereNotNull('nama_konsumen')
-                  ->where('nama_konsumen', 'like', '%' . $search . '%');
-            });
-        }
+            // Keluar: hitung berapa transaksi mengandung barang ini
+            $keluar = Transaksi::whereJsonContains('id_barang',$b->id_barang)
+                ->when($start, fn($q)=> $q->whereDate('tanggal_transaksi','>=',$start))
+                ->when($end,   fn($q)=> $q->whereDate('tanggal_transaksi','<=',$end))
+                ->count();
 
-        $transaksis = $query->orderByDesc('tanggal_transaksi')->paginate(10);
+            return (object)[
+                'barang'     => $b,
+                'masuk'      => $masuk,
+                'keluar'     => $keluar,
+                'stok_akhir' => $b->stok,
+            ];
+        });
 
-        return view('laporan.barang.index', compact('transaksis', 'start', 'end', 'search'));
+        return view('laporan.barang.index', compact(
+            'transaksis','start','end','search','stockSummary'
+        ));
     }
 
+    /**
+     * Export PDF laporan barang.
+     */
     public function exportPdf(Request $request)
     {
-        $start = $request->input('start_date');
-        $end = $request->input('end_date');
+        $start  = $request->input('start_date', Carbon::today()->toDateString());
+        $end    = $request->input('end_date',   Carbon::today()->toDateString());
         $search = $request->input('search');
 
-        $query = Transaksi::with(['konsumen', 'barang'])
-            ->whereNotNull('id_barang');
+        $transaksis = Transaksi::with('konsumen')
+            ->whereJsonLength('id_barang','>',0)
+            ->when($start, fn($q)=> $q->whereDate('tanggal_transaksi','>=',$start))
+            ->when($end,   fn($q)=> $q->whereDate('tanggal_transaksi','<=',$end))
+            ->when($search, fn($q)=>
+                $q->whereHas('konsumen', fn($q2)=>
+                    $q2->where('nama_konsumen','like',"%{$search}%")
+                )
+            )
+            ->orderByDesc('tanggal_transaksi')
+            ->get();
 
-        if ($start) {
-            $query->whereDate('tanggal_transaksi', '>=', $start);
-        }
+        $stockSummary = Barang::all()->map(function($b) use($start,$end) {
+            $masuk = TrxBarangMasuk::where('id_barang',$b->id_barang)
+                ->whereDate('tanggal_masuk','>=',$start)
+                ->whereDate('tanggal_masuk','<=',$end)
+                ->sum('jumlah');
+            $keluar = Transaksi::whereJsonContains('id_barang',$b->id_barang)
+                ->whereDate('tanggal_transaksi','>=',$start)
+                ->whereDate('tanggal_transaksi','<=',$end)
+                ->count();
+            return (object)[
+                'barang'     => $b,
+                'masuk'      => $masuk,
+                'keluar'     => $keluar,
+                'stok_akhir' => $b->stok,
+            ];
+        });
 
-        if ($end) {
-            $query->whereDate('tanggal_transaksi', '<=', $end);
-        }
+        $pdf = Pdf::loadView('laporan.barang.pdf', compact(
+            'transaksis','start','end','stockSummary'
+        ))->setPaper('a4','landscape');
 
-        if ($search) {
-            $query->whereHas('konsumen', function ($q) use ($search) {
-                $q->whereNotNull('nama_konsumen')
-                  ->where('nama_konsumen', 'like', '%' . $search . '%');
-            });
-        }
-
-        $transaksis = $query->orderByDesc('tanggal_transaksi')->get();
-
-        $pdf = Pdf::loadView('laporan.barang.pdf', compact('transaksis', 'start', 'end'))
-                  ->setPaper('a4', 'landscape');
-
-        return $pdf->download('laporan-transaksi-barang.pdf');
+        return $pdf->download("laporan-transaksi-barang_{$start}_to_{$end}.pdf");
     }
 }

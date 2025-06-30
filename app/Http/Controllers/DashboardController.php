@@ -8,6 +8,8 @@ use App\Models\TrxBarangMasuk;
 use App\Models\User;
 use App\Models\Transaksi;
 use App\Models\Konsumen;
+use App\Models\Barang;
+use Carbon\Carbon;
 
 class DashboardController extends Controller
 {
@@ -15,26 +17,44 @@ class DashboardController extends Controller
     {
         $user = auth()->user();
 
+        // lama
         if ($user->level === 'kasir') {
             $transaksiCount = Transaksi::where('id_user', $user->id)->count();
-            $konsumenCount = Konsumen::count();
+            $konsumenCount  = Konsumen::count();
 
-            return view('dashboard', [
-                'isKasir' => true,
-                'transaksiCount' => $transaksiCount,
-                'konsumenCount' => $konsumenCount,
-            ]);
+            // baru
+            $serviceTotalToday = Transaksi::whereDate('tanggal_transaksi', Carbon::today())
+                ->whereJsonLength('id_jasa', '>', 0)
+                ->sum('total_harga');
+            $barangCount       = Barang::count();
+
+            return view('dashboard', compact(
+                'transaksiCount',
+                'konsumenCount',
+                'serviceTotalToday',
+                'barangCount'
+            ))->with('isKasir', true);
         }
 
-        $supplierCount = Supplier::count();
+        // lama
+        $supplierCount    = Supplier::count();
         $barangMasukCount = TrxBarangMasuk::count();
-        $userCount = User::count();
+        $userCount        = User::count();
 
-        return view('dashboard', [
-            'isKasir' => false,
-            'supplierCount' => $supplierCount,
-            'barangMasukCount' => $barangMasukCount,
-            'userCount' => $userCount,
-        ]);
+        // baru
+        $konsumenCount     = Konsumen::count();
+        $serviceTotalToday = Transaksi::whereDate('tanggal_transaksi', Carbon::today())
+            ->whereJsonLength('id_jasa', '>', 0)
+            ->sum('total_harga');
+        $barangCount       = Barang::count();
+
+        return view('dashboard', compact(
+            'supplierCount',
+            'barangMasukCount',
+            'userCount',
+            'konsumenCount',
+            'serviceTotalToday',
+            'barangCount'
+        ))->with('isKasir', false);
     }
 }

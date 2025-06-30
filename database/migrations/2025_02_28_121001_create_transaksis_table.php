@@ -19,6 +19,7 @@ return new class extends Migration
             $table->unsignedBigInteger('id_jasa')->nullable();
             $table->date('tanggal_transaksi');
             $table->decimal('total_harga', 15, 2);
+
             $table->string('metode_pembayaran');
             $table->timestamps();
 

@@ -14,43 +14,86 @@ class Transaksi extends Model
 
     protected $fillable = [
         'id_user',
+        'id_teknisi',
         'id_konsumen',
-        'id_barang',
-        'id_jasa',
+        'id_barang',            // akan di-cast sebagai array
+        'id_jasa',              // akan di-cast sebagai array
         'tanggal_transaksi',
         'total_harga',
         'metode_pembayaran',
+        'status_service',
+        'estimasi_pengerjaan',
+    ];
+
+    protected $casts = [
+        'tanggal_transaksi'   => 'date',
+        'estimasi_pengerjaan' => 'string',
+        'id_barang'           => 'array',
+        'id_jasa'             => 'array',
     ];
 
     /**
-     * Relasi: Transaksi dimiliki oleh satu konsumen.
+     * Transaksi dimiliki oleh satu konsumen.
      */
     public function konsumen()
     {
         return $this->belongsTo(Konsumen::class, 'id_konsumen');
     }
 
-    /**
-     * Relasi: Transaksi bisa memiliki satu barang.
-     */
-    public function barang()
-    {
-        return $this->belongsTo(Barang::class, 'id_barang');
-    }
 
     /**
-     * Relasi: Transaksi bisa memiliki satu jasa.
+     * Ambil koleksi Barang dari JSON array id_barang.
      */
-    public function jasa()
+    public function barangModels()
     {
-        return $this->belongsTo(Jasa::class, 'id_jasa');
+        $raw = $this->id_barang;
+
+        if (is_null($raw)) {
+            $ids = [];
+        } elseif (! is_array($raw)) {
+            $decoded = json_decode($raw, true);
+            $ids = is_array($decoded) ? $decoded : [$raw];
+        } else {
+            $ids = $raw;
+        }
+
+        return Barang::whereIn('id_barang', $ids)->get();
+    }
+/**
+ * Ambil koleksi Jasa dari JSON array id_jasa.
+ */
+public function jasaModels()
+{
+    // Ambil raw value
+    $ids = $this->id_jasa;
+
+    // Jika null, jadi array kosong
+    if (is_null($ids)) {
+        $ids = [];
+    }
+    // Kalau bukan array, coba decode JSON atau bungkus jadi array
+    elseif (! is_array($ids)) {
+        $decoded = json_decode($ids, true);
+        $ids = is_array($decoded) ? $decoded : [$ids];
     }
 
+    return \App\Models\Jasa::whereIn('id_jasa', $ids)->get();
+}
+
+
     /**
-     * Relasi: Transaksi menghasilkan banyak entri point.
+     * Transaksi menghasilkan banyak entri point.
      */
     public function points()
     {
         return $this->hasMany(Point::class, 'id_transaksi');
+    }
+
+    /**
+     * Transaksi dikerjakan oleh satu teknisi.
+     */
+    public function teknisi()
+    {
+        return $this->belongsTo(Teknisi::class, 'id_teknisi');
     }
 }

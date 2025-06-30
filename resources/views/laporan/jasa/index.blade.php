@@ -1,5 +1,6 @@
 <x-app-layout>
     <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+
         <!-- Header: Search + Filter + Cetak -->
         <div class="flex flex-wrap justify-between gap-4 items-center mb-6">
             <!-- Form Search Konsumen -->
@@ -11,7 +12,7 @@
                 <input type="hidden" name="start_date" value="{{ request('start_date') }}">
                 <input type="hidden" name="end_date" value="{{ request('end_date') }}">
 
-                <button type="submit" class="px-4 py-2 bg-blue-600 text-green-200 rounded-md hover:bg-blue-700">
+                <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
                     Search
                 </button>
             </form>
@@ -27,7 +28,7 @@
                 <input type="date" name="end_date" value="{{ request('end_date') }}"
                     class="px-3 py-2 border border-gray-300 rounded-md text-sm">
 
-                <button type="submit" class="px-4 py-2 bg-green-600 text-text-green-200 rounded-md hover:bg-green-700">
+                <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700">
                     Filter
                 </button>
             </form>
@@ -54,7 +55,7 @@
                             TRANSAKSI</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase border-b">NAMA
                             KONSUMEN</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase border-b">NAMA JASA
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase border-b">DAFTAR JASA
                         </th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase border-b">TANGGAL
                             TRANSAKSI</th>
@@ -62,7 +63,6 @@
                         </th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase border-b">METODE
                             PEMBAYARAN</th>
-
                     </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
@@ -70,16 +70,22 @@
                         <tr class="hover:bg-gray-50">
                             <td class="px-6 py-2">{{ $trx->id_transaksi }}</td>
                             <td class="px-6 py-2">{{ $trx->konsumen->nama_konsumen ?? '-' }}</td>
-                            <td class="px-6 py-2">{{ $trx->jasa->nama_jasa ?? '-' }}</td>
+                            <td class="px-6 py-2 space-y-1">
+                                @foreach ($trx->jasaModels() as $j)
+                                    <div
+                                        class="inline-block px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">
+                                        {{ $j->nama_jasa }}
+                                    </div>
+                                @endforeach
+                            </td>
                             <td class="px-6 py-2">{{ \Carbon\Carbon::parse($trx->tanggal_transaksi)->format('d/m/Y') }}
                             </td>
                             <td class="px-6 py-2">Rp {{ number_format($trx->total_harga, 0, ',', '.') }}</td>
                             <td class="px-6 py-2">{{ $trx->metode_pembayaran ?? '-' }}</td>
-
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="7" class="px-6 py-16 text-center text-gray-400">
+                            <td colspan="6" class="px-6 py-16 text-center text-gray-400">
                                 <p class="text-lg">No items found, try to broaden your search</p>
                             </td>
                         </tr>

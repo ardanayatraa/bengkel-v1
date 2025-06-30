@@ -22,6 +22,7 @@
             border: 1px solid #ccc;
             padding: 6px;
             text-align: left;
+            vertical-align: top;
         }
 
         th {
@@ -39,6 +40,21 @@
             margin-top: 4px;
         }
 
+        .badge {
+            display: inline-block;
+            padding: 2px 6px;
+            margin: 1px;
+            font-size: 10px;
+            border-radius: 4px;
+            background-color: #bfdbfe;
+            color: #1e3a8a;
+        }
+
+        .section-title {
+            margin-top: 20px;
+            font-weight: bold;
+        }
+
         .total {
             margin-top: 10px;
             text-align: right;
@@ -54,28 +70,27 @@
 <body>
 
     @php
-        $chunks = $transaksis->chunk(25); // Ganti jumlah per halaman kalau mau
+        $chunks = $transaksis->chunk(25);
         $totalHarga = $transaksis->sum('total_harga');
     @endphp
 
-    @foreach ($chunks as $index => $chunk)
+    @foreach ($chunks as $page => $chunk)
         <h2>Laporan Transaksi Barang</h2>
         <div class="periode">
-            Periode: {{ \Carbon\Carbon::parse($start)->format('d/m/Y') }} -
-            {{ \Carbon\Carbon::parse($end)->format('d/m/Y') }}
-            — Halaman {{ $index + 1 }}
+            Periode: {{ \Carbon\Carbon::parse($start)->format('d/m/Y') }}
+            - {{ \Carbon\Carbon::parse($end)->format('d/m/Y') }}
+            — Halaman {{ $page + 1 }}
         </div>
 
         <table>
             <thead>
                 <tr>
                     <th>ID Transaksi</th>
-                    <th>Nama Konsumen</th>
-                    <th>Nama Barang</th>
-                    <th>Tanggal Transaksi</th>
+                    <th>Konsumen</th>
+                    <th>Daftar Barang</th>
+                    <th>Tanggal</th>
                     <th>Total Harga</th>
-                    <th>Metode Pembayaran</th>
-                    <th>Jumlah Point</th>
+                    <th>Metode</th>
                 </tr>
             </thead>
             <tbody>
@@ -83,20 +98,49 @@
                     <tr>
                         <td>{{ $trx->id_transaksi }}</td>
                         <td>{{ $trx->konsumen->nama_konsumen ?? '-' }}</td>
-                        <td>{{ $trx->barang->nama_barang ?? '-' }}</td>
-                        <td>{{ \Carbon\Carbon::parse($trx->tanggal_transaksi)->format('d/m/Y') }}</td>
+                        <td>
+                            @forelse($trx->barangModels() as $b)
+                                <span class="badge">{{ $b->nama_barang }}</span>
+                            @empty
+                                -
+                            @endforelse
+                        </td>
+                        <td>{{ $trx->tanggal_transaksi->format('d/m/Y') }}</td>
                         <td>Rp {{ number_format($trx->total_harga, 0, ',', '.') }}</td>
-                        <td>{{ $trx->metode_pembayaran ?? '-' }}</td>
-                        <td>{{ $trx->jumlah_point ?? 0 }}</td>
+                        <td>{{ $trx->metode_pembayaran }}</td>
                     </tr>
                 @endforeach
             </tbody>
         </table>
 
         @if ($loop->last)
+            {{-- Total transaksi --}}
             <div class="total">
-                Total Harga: Rp {{ number_format($totalHarga, 0, ',', '.') }}
+                Total Transaksi: Rp {{ number_format($totalHarga, 0, ',', '.') }}
             </div>
+
+            {{-- Ringkasan Stok --}}
+            <div class="section-title">Ringkasan Stok Barang</div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Barang</th>
+                        <th>Masuk</th>
+                        <th>Keluar</th>
+                        <th>Stok Akhir</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach ($stockSummary as $s)
+                        <tr>
+                            <td>{{ $s->barang->nama_barang }}</td>
+                            <td>{{ $s->masuk }}</td>
+                            <td>{{ $s->keluar }}</td>
+                            <td>{{ $s->stok_akhir }}</td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
         @else
             <div class="page-break"></div>
         @endif

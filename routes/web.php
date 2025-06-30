@@ -13,6 +13,7 @@ use App\Http\Controllers\{
     LaporanPenjualanController,
     PointController,
     SupplierController,
+    TeknisiController,
     TransaksiController,
     TrxBarangMasukController,
     UserController
@@ -58,9 +59,15 @@ Route::middleware(['auth'])->group(function () {
         'supplier' => 'supplier'
     ]);
 
+    Route::resource('teknisi', TeknisiController::class);
+
     Route::resource('transaksi', TransaksiController::class)->parameters([
         'transaksi' => 'transaksi'
     ]);
+    Route::get('transaksi/{id}', [TransaksiController::class, 'show'])
+    ->name('transaksi.show');
+Route::get('transaksi/{id}/print', [TransaksiController::class, 'print'])
+    ->name('transaksi.print');
 
     Route::resource('trx-barang-masuk', TrxBarangMasukController::class)->parameters([
         'trx-barang-masuk' => 'trx_barang_masuk'

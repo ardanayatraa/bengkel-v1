@@ -4,6 +4,8 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use App\Models\Barang;
+use App\Models\Supplier;
+use App\Models\Kategori;
 
 class BarangSeeder extends Seeder
 {
@@ -12,31 +14,54 @@ class BarangSeeder extends Seeder
      */
     public function run(): void
     {
-        $barangs = [
-            ['nama_barang' => 'Seal Depan Vario', 'harga_beli' => 13000, 'harga_jual' => 15000],
-            ['nama_barang' => 'Seal Belakang Vario', 'harga_beli' => 8000, 'harga_jual' => 10000],
-            ['nama_barang' => 'Seal Depan Beat', 'harga_beli' => 13000, 'harga_jual' => 15000],
-            ['nama_barang' => 'Seal Belakang Beat', 'harga_beli' => 8000, 'harga_jual' => 10000],
-            ['nama_barang' => 'Seal Depan Nmax', 'harga_beli' => 15000, 'harga_jual' => 17000],
-            ['nama_barang' => 'Seal Belakang Nmax', 'harga_beli' => 13000, 'harga_jual' => 15000],
-            ['nama_barang' => 'Seal Depan Supra', 'harga_beli' => 13000, 'harga_jual' => 15000],
-            ['nama_barang' => 'Seal Belakang Supra', 'harga_beli' => 8000, 'harga_jual' => 10000],
-            ['nama_barang' => 'As Ukuran 8 MM', 'harga_beli' => 13000, 'harga_jual' => 15000],
-            ['nama_barang' => 'As Ukuran 10 MM', 'harga_beli' => 18000, 'harga_jual' => 20000],
-            ['nama_barang' => 'As Ukuran 12 MM', 'harga_beli' => 28000, 'harga_jual' => 30000],
-            ['nama_barang' => 'As Ukuran 14 MM', 'harga_beli' => 45000, 'harga_jual' => 50000],
+        // 1. Buat supplier default
+        $supplier = Supplier::first() ?: Supplier::create([
+            'nama_supplier' => 'CV. Mitra Motor',
+            'no_telp'       => '082112345678',
+            'alamat'        => 'Jl. Merdeka No. 10',
+        ]);
+
+        // 2. Buat kategori Seal & As jika belum ada
+        $sealCat = Kategori::firstWhere('nama_kategori','Seal')
+            ?: Kategori::create([
+                'nama_kategori' => 'Seal',
+                'keterangan'    => 'Segel motor berbagai tipe',
+            ]);
+        $asCat = Kategori::firstWhere('nama_kategori','As')
+            ?: Kategori::create([
+                'nama_kategori' => 'As',
+                'keterangan'    => 'As roda dan mesin',
+            ]);
+
+        // 3. Daftar barang
+        $items = [
+            ['nama'=>'Seal Depan Vario',   'beli'=>13000,'jual'=>15000,'cat'=>$sealCat],
+            ['nama'=>'Seal Belakang Vario','beli'=>8000, 'jual'=>10000,'cat'=>$sealCat],
+            ['nama'=>'Seal Depan Beat',    'beli'=>13000,'jual'=>15000,'cat'=>$sealCat],
+            ['nama'=>'Seal Belakang Beat', 'beli'=>8000, 'jual'=>10000,'cat'=>$sealCat],
+            ['nama'=>'Seal Depan Nmax',    'beli'=>15000,'jual'=>17000,'cat'=>$sealCat],
+            ['nama'=>'Seal Belakang Nmax', 'beli'=>13000,'jual'=>15000,'cat'=>$sealCat],
+            ['nama'=>'Seal Depan Supra',   'beli'=>13000,'jual'=>15000,'cat'=>$sealCat],
+            ['nama'=>'Seal Belakang Supra','beli'=>8000, 'jual'=>10000,'cat'=>$sealCat],
+            ['nama'=>'As Ukuran 8 MM',     'beli'=>13000,'jual'=>15000,'cat'=>$asCat],
+            ['nama'=>'As Ukuran 10 MM',    'beli'=>18000,'jual'=>20000,'cat'=>$asCat],
+            ['nama'=>'As Ukuran 12 MM',    'beli'=>28000,'jual'=>30000,'cat'=>$asCat],
+            ['nama'=>'As Ukuran 14 MM',    'beli'=>45000,'jual'=>50000,'cat'=>$asCat],
         ];
 
-        foreach ($barangs as $barang) {
-            Barang::create([
-                'id_supplier' => 0,
-                'id_kategori' => 0,
-                'stok' => 0,
-                'keterangan' => null,
-                'nama_barang' => $barang['nama_barang'],
-                'harga_beli' => $barang['harga_beli'],
-                'harga_jual' => $barang['harga_jual'],
-            ]);
+        // 4. Seed Barang
+        foreach ($items as $it) {
+            Barang::updateOrCreate(
+                ['nama_barang' => $it['nama']],
+                [
+                    'id_supplier' => $supplier->id_supplier,
+                    'id_kategori' => $it['cat']->id_kategori,
+                    'stok'        => 0,
+                    'keterangan'  => null,
+                    'harga_beli'  => $it['beli'],
+                    'harga_jual'  => $it['jual'],
+                ]
+            );
         }
     }
 }

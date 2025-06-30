@@ -6,157 +6,168 @@ use App\Models\Transaksi;
 use App\Models\Konsumen;
 use App\Models\Barang;
 use App\Models\Jasa;
+use App\Models\Teknisi;
 use App\Models\Point;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class TransaksiController extends Controller
 {
-    /**
-     * Tampilkan daftar semua transaksi beserta relasinya.
-     *
-     * @return \Illuminate\View\View
-     */
     public function index()
     {
-        $transaksis = Transaksi::with(['konsumen', 'barang', 'jasa'])->get();
-
+        $transaksis = Transaksi::with(['konsumen','teknisi','points'])->get();
         return view('transaksi.index', compact('transaksis'));
     }
 
-    /**
-     * Tampilkan form untuk membuat transaksi baru.
-     *
-     * @return \Illuminate\View\View
-     */
     public function create()
     {
         $konsumens = Konsumen::all();
         $barangs   = Barang::all();
         $jasas     = Jasa::all();
+        $teknisis  = Teknisi::all();
 
-        return view('transaksi.create', compact('konsumens', 'barangs', 'jasas'));
+        return view('transaksi.create', compact('konsumens','barangs','jasas','teknisis'));
     }
 
-    /**
-     * Simpan transaksi baru ke database.
-     *
-     * - Member dengan ≥10 poin dapat diskon Rp10.000 (otomatis mengurangi 10 poin).
-     * - Poin baru (1) hanya diberikan jika transaksi mencakup jasa.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\RedirectResponse
-     */
     public function store(Request $request)
     {
-        // 1. Validasi input
-        $validated = $request->validate([
-            'id_konsumen'       => 'required|integer|exists:konsumens,id_konsumen',
-            'id_barang'         => 'nullable|integer|exists:barangs,id_barang',
-            'id_jasa'           => 'nullable|integer|exists:jasas,id_jasa',
-            'tanggal_transaksi' => 'required|date',
-            'total_harga'       => 'required|numeric',
-            'metode_pembayaran' => 'required|string',
+        $v = $request->validate([
+            'id_konsumen'         => 'required|exists:konsumens,id_konsumen',
+            'id_teknisi'          => 'nullable|exists:teknisis,id_teknisi',
+            'id_barang'           => 'nullable|array',
+            'id_barang.*'         => 'exists:barangs,id_barang',
+            'id_jasa'             => 'nullable|array',
+            'id_jasa.*'           => 'exists:jasas,id_jasa',
+            'tanggal_transaksi'   => 'required|date',
+            'metode_pembayaran'   => 'required|string',
+            'status_service'      => 'required|in:proses,selesai,diambil',
+            'estimasi_pengerjaan' => 'nullable|string|max:191',
         ]);
 
-        // 2. Ambil model Konsumen
-        $konsumen  = Konsumen::findOrFail($validated['id_konsumen']);
-        $hargaAwal = $validated['total_harga'];
-        $diskon    = 0;
-
-        // 3. Terapkan diskon member jika poin ≥10
-        if (strtolower($konsumen->keterangan) === 'member' && $konsumen->jumlah_point >= 10) {
-            $diskon    = 10000;
-            $hargaAkhir = max(0, $hargaAwal - $diskon);
-            $konsumen->decrement('jumlah_point', 10);
-        } else {
-            $hargaAkhir = $hargaAwal;
+        if (!empty($v['id_jasa']) && empty(trim($v['estimasi_pengerjaan']))) {
+            return back()->withInput()
+                         ->withErrors(['estimasi_pengerjaan'=>'Estimasi wajib diisi jika ada jasa.']);
         }
 
-        // 4. Gabungkan data menggunakan array_merge
-        $dataToCreate = array_merge($validated, [
-            'id_user'     => Auth::id(),
-            'total_harga' => $hargaAkhir,
+        $k = Konsumen::findOrFail($v['id_konsumen']);
+
+        // hitung total harga
+        $total = collect($v['id_barang'] ?? [])
+                    ->map(fn($i)=>Barang::find($i)->harga_jual)->sum()
+               +  collect($v['id_jasa'] ?? [])
+                    ->map(fn($i)=>Jasa::find($i)->harga_jasa)->sum();
+
+        // diskon member
+        if (strtolower($k->keterangan)==='member' && $k->jumlah_point >= 10) {
+            $total -= 10000;
+            $k->decrement('jumlah_point', 10);
+        }
+
+        $transaksi = Transaksi::create([
+            'id_konsumen'         => $v['id_konsumen'],
+            'id_teknisi'          => $v['id_teknisi']          ?? null,
+            'id_barang'           => $v['id_barang']           ?? [],
+            'id_jasa'             => $v['id_jasa']             ?? [],
+            'tanggal_transaksi'   => $v['tanggal_transaksi'],
+            'metode_pembayaran'   => $v['metode_pembayaran'],
+            'status_service'      => $v['status_service'],
+            'estimasi_pengerjaan' => $v['estimasi_pengerjaan'] ?? null,
+            'total_harga'         => $total,
+            'id_user'             => Auth::id(),
         ]);
 
-        // 5. Buat transaksi
-        $transaksi = Transaksi::create($dataToCreate);
-
-        // 6. Berikan 1 poin untuk member jika ada jasa
-        if (
-            strtolower($konsumen->keterangan) === 'member'
-            && ! is_null($validated['id_jasa'])
-        ) {
+        if (strtolower($k->keterangan)==='member' && !empty($v['id_jasa'])) {
             Point::create([
-                'id_konsumen'   => $konsumen->id_konsumen,
+                'id_konsumen'   => $k->id_konsumen,
                 'id_transaksi'  => $transaksi->id_transaksi,
                 'tanggal'       => now()->toDateString(),
                 'jumlah_point'  => 1,
             ]);
-            $konsumen->increment('jumlah_point', 1);
+
         }
 
-        // 7. Redirect dengan pesan sukses
-        return redirect()
-            ->route('transaksi.index')
-            ->with('success', 'Transaksi berhasil disimpan.');
+        return redirect()->route('transaksi.index')
+                         ->with('success','Transaksi berhasil disimpan.');
     }
 
-    /**
-     * Tampilkan form edit untuk transaksi tertentu.
-     *
-     * @param  int|string  $id
-     * @return \Illuminate\View\View
-     */
     public function edit($id)
     {
         $transaksi = Transaksi::findOrFail($id);
         $konsumens = Konsumen::all();
         $barangs   = Barang::all();
         $jasas     = Jasa::all();
+        $teknisis  = Teknisi::all();
 
-        return view('transaksi.edit', compact('transaksi', 'konsumens', 'barangs', 'jasas'));
+        return view('transaksi.edit', compact('transaksi','konsumens','barangs','jasas','teknisis'));
     }
 
-    /**
-     * Update data transaksi di database.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  int|string  $id
-     * @return \Illuminate\Http\RedirectResponse
-     */
     public function update(Request $request, $id)
     {
-        $validated = $request->validate([
-            'id_konsumen'       => 'required|integer|exists:konsumens,id_konsumen',
-            'id_barang'         => 'nullable|integer|exists:barangs,id_barang',
-            'id_jasa'           => 'nullable|integer|exists:jasas,id_jasa',
-            'tanggal_transaksi' => 'required|date',
-            'total_harga'       => 'required|numeric',
-            'metode_pembayaran' => 'required|string',
+        $v = $request->validate([
+            'id_konsumen'         => 'required|exists:konsumens,id_konsumen',
+            'id_teknisi'          => 'nullable|exists:teknisis,id_teknisi',
+            'id_barang'           => 'nullable|array',
+            'id_barang.*'         => 'exists:barangs,id_barang',
+            'id_jasa'             => 'nullable|array',
+            'id_jasa.*'           => 'exists:jasas,id_jasa',
+            'tanggal_transaksi'   => 'required|date',
+            'metode_pembayaran'   => 'required|string',
+            'status_service'      => 'required|in:proses,selesai,diambil',
+            'estimasi_pengerjaan' => 'nullable|string|max:191',
         ]);
 
-        $transaksi = Transaksi::findOrFail($id);
-        $transaksi->update($validated);
+        if (!empty($v['id_jasa']) && empty(trim($v['estimasi_pengerjaan']))) {
+            return back()->withInput()
+                         ->withErrors(['estimasi_pengerjaan'=>'Estimasi wajib diisi jika ada jasa.']);
+        }
 
-        return redirect()
-            ->route('transaksi.index')
-            ->with('success', 'Transaksi berhasil diperbarui.');
+        $k = Konsumen::findOrFail($v['id_konsumen']);
+
+        $total = collect($v['id_barang'] ?? [])
+                    ->map(fn($i)=>Barang::find($i)->harga_jual)->sum()
+               +  collect($v['id_jasa'] ?? [])
+                    ->map(fn($i)=>Jasa::find($i)->harga_jasa)->sum();
+
+        if (strtolower($k->keterangan)==='member' && $k->jumlah_point >= 10) {
+            $total -= 10000;
+        }
+
+        $transaksi = Transaksi::findOrFail($id);
+        $transaksi->update([
+            'id_konsumen'         => $v['id_konsumen'],
+            'id_teknisi'          => $v['id_teknisi']          ?? null,
+            'id_barang'           => $v['id_barang']           ?? [],
+            'id_jasa'             => $v['id_jasa']             ?? [],
+            'tanggal_transaksi'   => $v['tanggal_transaksi'],
+            'metode_pembayaran'   => $v['metode_pembayaran'],
+            'status_service'      => $v['status_service'],
+            'estimasi_pengerjaan' => $v['estimasi_pengerjaan'] ?? null,
+            'total_harga'         => $total,
+        ]);
+
+        return redirect()->route('transaksi.index')
+                         ->with('success','Transaksi berhasil diperbarui.');
     }
 
-    /**
-     * Hapus transaksi dari database.
-     *
-     * @param  int|string  $id
-     * @return \Illuminate\Http\RedirectResponse
-     */
     public function destroy($id)
     {
-        $transaksi = Transaksi::findOrFail($id);
-        $transaksi->delete();
+        Transaksi::findOrFail($id)->delete();
+        return redirect()->route('transaksi.index')
+                         ->with('success','Transaksi berhasil dihapus.');
+    }
 
-        return redirect()
-            ->route('transaksi.index')
-            ->with('success', 'Transaksi berhasil dihapus.');
+    public function show($id)
+    {
+        $transaksi = Transaksi::with(['konsumen','teknisi','points'])->findOrFail($id);
+        return view('transaksi.show', compact('transaksi'));
+    }
+
+    public function print($id)
+    {
+        $transaksi = Transaksi::with(['konsumen','teknisi','points'])->findOrFail($id);
+        $pdf = Pdf::loadView('transaksi.print', compact('transaksi'))
+                  ->setPaper('a4','portrait');
+        return $pdf->download("transaksi_{$transaksi->id_transaksi}.pdf");
     }
 }

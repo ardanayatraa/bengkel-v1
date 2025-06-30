@@ -1,142 +1,133 @@
 <x-app-layout>
-    <div class="mx-auto sm:px-6 lg:px-8">
-        <div class="mb-4">
-            <h2 class="text-lg font-semibold border py-4 pl-6 pr-8 text-red-800 flex items-center gap-2">
-                Tambah Transaksi
-            </h2>
-        </div>
+    <div class="mx-auto sm:px-6 lg:px-8 py-6">
+        <h2 class="text-lg font-semibold border py-4 pl-6 pr-8 text-red-800 flex items-center gap-2 mb-4">
+            Tambah Transaksi
+        </h2>
         <div class="bg-white border dark:bg-gray-800 sm:rounded-lg p-6">
             <form action="{{ route('transaksi.store') }}" method="POST">
                 @csrf
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-
                     <!-- Konsumen -->
                     <div>
-                        <label for="id_konsumen"
-                            class="block font-medium text-gray-700 dark:text-gray-300 mb-2">Konsumen</label>
-                        <select id="id_konsumen" name="id_konsumen" required
-                            class="block w-full border border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 rounded-lg p-2 transition">
-                            @foreach ($konsumens as $konsumen)
-                                <option value="{{ $konsumen->id_konsumen }}"
-                                    data-keterangan="{{ strtolower($konsumen->keterangan) }}"
-                                    data-point="{{ $konsumen->jumlah_point }}">
-                                    {{ $konsumen->nama_konsumen }} - {{ $konsumen->jumlah_point }} Point
+                        <label class="block mb-2 font-medium">Konsumen</label>
+                        <select id="id_konsumen" name="id_konsumen" required class="block w-full p-2 border rounded-lg">
+                            @foreach ($konsumens as $k)
+                                <option value="{{ $k->id_konsumen }}" data-keterangan="{{ strtolower($k->keterangan) }}"
+                                    data-point="{{ $k->jumlah_point }}">
+                                    {{ $k->nama_konsumen }} — {{ $k->jumlah_point }} Point
                                 </option>
                             @endforeach
                         </select>
                     </div>
-
+                    <!-- Teknisi -->
+                    <div>
+                        <label class="block mb-2 font-medium">Teknisi</label>
+                        <select name="id_teknisi" class="block w-full p-2 border rounded-lg">
+                            <option value="">— Pilih Teknisi —</option>
+                            @foreach ($teknisis as $t)
+                                <option value="{{ $t->id_teknisi }}">{{ $t->nama_teknisi }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <!-- Status Service -->
+                    <div>
+                        <label class="block mb-2 font-medium">Status Service</label>
+                        <select name="status_service" required class="block w-full p-2 border rounded-lg">
+                            <option value="proses">Proses</option>
+                            <option value="selesai">Selesai</option>
+                            <option value="diambil">Diambil</option>
+                        </select>
+                    </div>
                     <!-- Barang -->
-                    <div>
-                        <label for="id_barang"
-                            class="block font-medium text-gray-700 dark:text-gray-300 mb-2">Barang</label>
-                        <select id="id_barang" name="id_barang"
-                            class="block w-full border border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 rounded-lg p-2 transition">
-                            <option value="">Tidak ada</option>
-                            @foreach ($barangs as $barang)
-                                <option value="{{ $barang->id_barang }}" data-harga="{{ $barang->harga_jual }}">
-                                    {{ $barang->nama_barang }} -
-                                    {{ 'Rp ' . number_format($barang->harga_jual, 0, ',', '.') }}
-                                </option>
+                    <div class="md:col-span-2">
+                        <label class="block mb-2 font-medium">Barang (bisa pilih banyak)</label>
+                        <div class="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto border rounded-lg p-2">
+                            @foreach ($barangs as $b)
+                                <label class="flex items-center space-x-2">
+                                    <input type="checkbox" name="id_barang[]" value="{{ $b->id_barang }}"
+                                        data-harga="{{ $b->harga_jual }}" class="h-4 w-4">
+                                    <span>{{ $b->nama_barang }} — Rp
+                                        {{ number_format($b->harga_jual, 0, ',', '.') }}</span>
+                                </label>
                             @endforeach
-                        </select>
+                        </div>
                     </div>
-
                     <!-- Jasa -->
-                    <div>
-                        <label for="id_jasa"
-                            class="block font-medium text-gray-700 dark:text-gray-300 mb-2">Jasa</label>
-                        <select id="id_jasa" name="id_jasa"
-                            class="block w-full border border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 rounded-lg p-2 transition">
-                            <option value="">Tidak ada</option>
-                            @foreach ($jasas as $jasa)
-                                <option value="{{ $jasa->id_jasa }}" data-harga="{{ $jasa->harga_jasa }}">
-                                    {{ $jasa->nama_jasa }} -
-                                    {{ 'Rp ' . number_format($jasa->harga_jasa, 0, ',', '.') }}
-                                </option>
+                    <div class="md:col-span-2">
+                        <label class="block mb-2 font-medium">Jasa (bisa pilih banyak)</label>
+                        <div class="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto border rounded-lg p-2">
+                            @foreach ($jasas as $j)
+                                <label class="flex items-center space-x-2">
+                                    <input type="checkbox" name="id_jasa[]" value="{{ $j->id_jasa }}"
+                                        data-harga="{{ $j->harga_jasa }}" class="h-4 w-4">
+                                    <span>{{ $j->nama_jasa }} — Rp
+                                        {{ number_format($j->harga_jasa, 0, ',', '.') }}</span>
+                                </label>
                             @endforeach
-                        </select>
+                        </div>
                     </div>
-
+                    <!-- Estimasi -->
+                    <div id="estimasi_wrapper" class="hidden md:col-span-2">
+                        <label class="block mb-2 font-medium">Estimasi Pengerjaan</label>
+                        <input type="text" name="estimasi_pengerjaan" placeholder="Misal: 2 hari atau 1 Jul 14:00"
+                            class="block w-full p-2 border rounded-lg">
+                        @error('estimasi_pengerjaan')
+                            <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
+                        @enderror
+                    </div>
                     <!-- Tanggal Transaksi -->
                     <div>
-                        <label for="tanggal_transaksi"
-                            class="block font-medium text-gray-700 dark:text-gray-300 mb-2">Tanggal Transaksi</label>
-                        <input type="date" id="tanggal_transaksi" name="tanggal_transaksi"
-                            class="block w-full border border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 rounded-lg p-2 transition"
-                            required>
+                        <label class="block mb-2 font-medium">Tanggal Transaksi</label>
+                        <input type="date" name="tanggal_transaksi" required
+                            class="block w-full p-2 border rounded-lg">
                     </div>
-
-                    <!-- Total Harga (Tampilan Format Rupiah) -->
-                    <div>
-                        <label class="block font-medium text-gray-700 dark:text-gray-300 mb-2">Total Harga</label>
-                        <input type="text" id="total_harga_display"
-                            class="block w-full border border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 rounded-lg p-2 transition"
-                            readonly>
-                    </div>
-
-                    <!-- Total Harga (Value untuk Submit) -->
-                    <input type="hidden" id="total_harga" name="total_harga" required>
-
                     <!-- Metode Pembayaran -->
                     <div>
-                        <label for="metode_pembayaran"
-                            class="block font-medium text-gray-700 dark:text-gray-300 mb-2">Metode Pembayaran</label>
-                        <select id="metode_pembayaran" name="metode_pembayaran" required
-                            class="block w-full border border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 rounded-lg p-2 transition">
+                        <label class="block mb-2 font-medium">Metode Pembayaran</label>
+                        <select name="metode_pembayaran" required class="block w-full p-2 border rounded-lg">
                             <option value="">Pilih Metode</option>
                             <option value="Cash">Cash</option>
                             <option value="QRIS">QRIS</option>
                         </select>
                     </div>
-
+                    <!-- Total Harga -->
+                    <div>
+                        <label class="block mb-2 font-medium">Total Harga</label>
+                        <input type="text" id="total_harga_display" readonly
+                            class="block w-full p-2 border rounded-lg">
+                        <input type="hidden" name="total_harga" id="total_harga">
+                    </div>
                 </div>
-
                 <div class="mt-6 flex justify-between">
                     <a href="{{ route('transaksi.index') }}"
-                        class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition">Batal</a>
+                        class="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700">Batal</a>
                     <button type="submit"
-                        class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition">Simpan</button>
+                        class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">Simpan</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- Script untuk menghitung total harga -->
     <script>
-        function formatRupiah(angka) {
-            return 'Rp ' + angka.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+        function formatRupiah(n) {
+            return 'Rp ' + n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
         }
 
-        function calculateTotal() {
-            const barangSelect = document.getElementById('id_barang');
-            const jasaSelect = document.getElementById('id_jasa');
-            const konsumenSelect = document.getElementById('id_konsumen');
-            const totalHargaHidden = document.getElementById('total_harga');
-            const totalHargaDisplay = document.getElementById('total_harga_display');
-
-            const barangHarga = parseInt(barangSelect.selectedOptions[0]?.dataset.harga || 0);
-            const jasaHarga = parseInt(jasaSelect.selectedOptions[0]?.dataset.harga || 0);
-            const keterangan = konsumenSelect.selectedOptions[0]?.dataset.keterangan || 'bukan member';
-            const jumlahPoint = parseInt(konsumenSelect.selectedOptions[0]?.dataset.point || 0);
-
-            let total = barangHarga + jasaHarga;
-
-            // Estimasi diskon Rp10.000 jika member dan point >= 10
-            if (keterangan === 'member' && jumlahPoint >= 10) {
-                total -= 10000;
-            }
-
-            totalHargaHidden.value = total;
-            totalHargaDisplay.value = formatRupiah(total);
+        function calc() {
+            let sum = 0;
+            document.querySelectorAll('input[name="id_barang[]"]:checked').forEach(o => sum += +o.dataset.harga);
+            document.querySelectorAll('input[name="id_jasa[]"]:checked').forEach(o => sum += +o.dataset.harga);
+            const kons = document.querySelector('#id_konsumen option:checked');
+            const member = kons.dataset.keterangan === 'member';
+            const pts = +kons.dataset.point;
+            if (member && pts >= 10) sum -= 10000;
+            document.getElementById('estimasi_wrapper').classList.toggle('hidden', document.querySelectorAll(
+                'input[name="id_jasa[]"]:checked').length === 0);
+            document.getElementById('total_harga').value = sum;
+            document.getElementById('total_harga_display').value = formatRupiah(sum);
         }
-
-
-
-        document.getElementById('id_barang').addEventListener('change', calculateTotal);
-        document.getElementById('id_jasa').addEventListener('change', calculateTotal);
-        document.getElementById('id_konsumen').addEventListener('change', calculateTotal);
-
-        window.addEventListener('load', calculateTotal);
+        document.querySelectorAll('#id_konsumen,input[name="id_barang[]"],input[name="id_jasa[]"]').forEach(e => e
+            .addEventListener('change', calc));
+        window.addEventListener('load', calc);
     </script>
 </x-app-layout>

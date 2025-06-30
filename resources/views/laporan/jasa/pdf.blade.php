@@ -61,9 +61,9 @@
     @foreach ($chunks as $index => $chunk)
         <h2>Laporan Transaksi Jasa</h2>
         <div class="tanggal">
-            Periode: {{ \Carbon\Carbon::parse($start)->format('d/m/Y') }} -
-            {{ \Carbon\Carbon::parse($end)->format('d/m/Y') }}
-            — Halaman {{ $index + 1 }}
+            Periode: {{ \Carbon\Carbon::parse($start)->format('d/m/Y') }}
+            - {{ \Carbon\Carbon::parse($end)->format('d/m/Y') }}
+            &mdash; Halaman {{ $index + 1 }}
         </div>
 
         <table>
@@ -71,11 +71,10 @@
                 <tr>
                     <th>ID Transaksi</th>
                     <th>Nama Konsumen</th>
-                    <th>Nama Jasa</th>
+                    <th>Daftar Jasa</th>
                     <th>Tanggal Transaksi</th>
                     <th>Total Harga</th>
                     <th>Metode Pembayaran</th>
-
                 </tr>
             </thead>
             <tbody>
@@ -83,11 +82,16 @@
                     <tr>
                         <td>{{ $trx->id_transaksi }}</td>
                         <td>{{ $trx->konsumen->nama_konsumen ?? '-' }}</td>
-                        <td>{{ $trx->jasa->nama_jasa ?? '-' }}</td>
+                        <td>
+                            @foreach ($trx->jasaModels() as $jasa)
+                                {{ $jasa->nama_jasa }}@if (!$loop->last)
+                                    ,
+                                @endif
+                            @endforeach
+                        </td>
                         <td>{{ \Carbon\Carbon::parse($trx->tanggal_transaksi)->format('d/m/Y') }}</td>
                         <td>Rp {{ number_format($trx->total_harga, 0, ',', '.') }}</td>
                         <td>{{ $trx->metode_pembayaran ?? '-' }}</td>
-
                     </tr>
                 @endforeach
             </tbody>

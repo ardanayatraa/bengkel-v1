@@ -64,15 +64,36 @@
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
                     @forelse ($transaksis as $trx)
+                        @php
+                            $barangs = $trx->barangModels();
+                            $jasas = $trx->jasaModels();
+                            if ($barangs->isNotEmpty() && $jasas->isNotEmpty()) {
+                                $typeLabel = 'Barang & Jasa';
+                            } elseif ($barangs->isNotEmpty()) {
+                                $typeLabel = 'Barang';
+                            } elseif ($jasas->isNotEmpty()) {
+                                $typeLabel = 'Jasa';
+                            } else {
+                                $typeLabel = '-';
+                            }
+                        @endphp
                         <tr class="hover:bg-gray-50">
                             <td class="px-6 py-2">{{ $trx->id_transaksi }}</td>
                             <td class="px-6 py-2">{{ $trx->konsumen->nama_konsumen ?? '-' }}</td>
-                            <td class="px-6 py-2">
-                                {{ $trx->barang->nama_barang ?? ($trx->jasa->nama_jasa ?? '-') }}
+                            <td class="px-6 py-2 space-y-1">
+                                @foreach ($barangs as $b)
+                                    <div class="inline-block px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">
+                                        {{ $b->nama_barang }}
+                                    </div>
+                                @endforeach
+                                @foreach ($jasas as $j)
+                                    <div
+                                        class="inline-block px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">
+                                        {{ $j->nama_jasa }}
+                                    </div>
+                                @endforeach
                             </td>
-                            <td class="px-6 py-2">
-                                {{ $trx->id_barang ? 'Barang' : ($trx->id_jasa ? 'Jasa' : '-') }}
-                            </td>
+                            <td class="px-6 py-2">{{ $typeLabel }}</td>
                             <td class="px-6 py-2">{{ \Carbon\Carbon::parse($trx->tanggal_transaksi)->format('d/m/Y') }}
                             </td>
                             <td class="px-6 py-2">Rp {{ number_format($trx->total_harga, 0, ',', '.') }}</td>

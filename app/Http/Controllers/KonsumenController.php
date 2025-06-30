@@ -22,7 +22,7 @@ class KonsumenController extends Controller
     {
         $validatedData = $request->validate([
             'nama_konsumen' => 'required|string|max:255',
-            'no_kendaraan' => 'required|string|max:50',
+            'no_kendaraan' => 'nullable|string|max:50',
             'no_telp' => 'required|string|max:20',
             'alamat' => 'required|string',
             'jumlah_point' => 'nullable|integer',
@@ -64,7 +64,7 @@ class KonsumenController extends Controller
 
     public function cetakKartu(\App\Models\Konsumen $konsumen)
 {
-    
+
     return view('konsumen.cetak-kartu', compact('konsumen'));
 }
 

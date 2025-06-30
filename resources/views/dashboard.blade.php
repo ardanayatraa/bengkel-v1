@@ -9,43 +9,87 @@
         <div class="mx-auto sm:px-6 lg:px-8">
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                 @if ($isKasir)
-                    <!-- Total Transaksi -->
-                    <div class="bg-white border overflow-hidden shadow-sm sm:rounded-lg">
-                        <div class="p-6 text-gray-900">
+                    <!-- Lama: Total Transaksi Saya -->
+                    <div class="bg-white border shadow-sm sm:rounded-lg">
+                        <div class="p-6">
                             <h3 class="text-lg font-semibold mb-2">Total Transaksi Saya</h3>
                             <p class="text-3xl font-bold text-green-600">{{ $transaksiCount }}</p>
                         </div>
                     </div>
 
-                    <!-- Total Konsumen -->
-                    <div class="bg-white border overflow-hidden shadow-sm sm:rounded-lg">
-                        <div class="p-6 text-gray-900">
+                    <!-- Lama: Jumlah Konsumen -->
+                    <div class="bg-white border shadow-sm sm:rounded-lg">
+                        <div class="p-6">
                             <h3 class="text-lg font-semibold mb-2">Jumlah Konsumen</h3>
                             <p class="text-3xl font-bold text-indigo-600">{{ $konsumenCount }}</p>
                         </div>
                     </div>
+
+                    <!-- Baru: Total Service Hari Ini -->
+                    <div class="bg-white border shadow-sm sm:rounded-lg">
+                        <div class="p-6">
+                            <h3 class="text-lg font-semibold mb-2">Total Service Hari Ini</h3>
+                            <p class="text-3xl font-bold text-yellow-600">
+                                Rp {{ number_format($serviceTotalToday, 0, ',', '.') }}
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Baru: Total Barang/Sparepart -->
+                    <div class="bg-white border shadow-sm sm:rounded-lg">
+                        <div class="p-6">
+                            <h3 class="text-lg font-semibold mb-2">Total Barang</h3>
+                            <p class="text-3xl font-bold text-blue-600">{{ $barangCount }}</p>
+                        </div>
+                    </div>
                 @else
-                    <!-- Jumlah Supplier -->
-                    <div class="bg-white border overflow-hidden shadow-sm sm:rounded-lg">
-                        <div class="p-6 text-gray-900">
+                    <!-- Lama: Jumlah Supplier -->
+                    <div class="bg-white border shadow-sm sm:rounded-lg">
+                        <div class="p-6">
                             <h3 class="text-lg font-semibold mb-2">Jumlah Supplier</h3>
                             <p class="text-3xl font-bold text-blue-600">{{ $supplierCount }}</p>
                         </div>
                     </div>
 
-                    <!-- Barang Masuk -->
-                    <div class="bg-white border overflow-hidden shadow-sm sm:rounded-lg">
-                        <div class="p-6 text-gray-900">
+                    <!-- Lama: Transaksi Barang Masuk -->
+                    <div class="bg-white border shadow-sm sm:rounded-lg">
+                        <div class="p-6">
                             <h3 class="text-lg font-semibold mb-2">Transaksi Barang Masuk</h3>
                             <p class="text-3xl font-bold text-green-600">{{ $barangMasukCount }}</p>
                         </div>
                     </div>
 
-                    <!-- Jumlah User -->
-                    <div class="bg-white border overflow-hidden shadow-sm sm:rounded-lg">
-                        <div class="p-6 text-gray-900">
+                    <!-- Lama: Jumlah User -->
+                    <div class="bg-white border shadow-sm sm:rounded-lg">
+                        <div class="p-6">
                             <h3 class="text-lg font-semibold mb-2">Jumlah User</h3>
                             <p class="text-3xl font-bold text-indigo-600">{{ $userCount }}</p>
+                        </div>
+                    </div>
+
+                    <!-- Baru: Jumlah Konsumen -->
+                    <div class="bg-white border shadow-sm sm:rounded-lg">
+                        <div class="p-6">
+                            <h3 class="text-lg font-semibold mb-2">Jumlah Konsumen</h3>
+                            <p class="text-3xl font-bold text-indigo-600">{{ $konsumenCount }}</p>
+                        </div>
+                    </div>
+
+                    <!-- Baru: Total Service Hari Ini -->
+                    <div class="bg-white border shadow-sm sm:rounded-lg">
+                        <div class="p-6">
+                            <h3 class="text-lg font-semibold mb-2">Total Service Hari Ini</h3>
+                            <p class="text-3xl font-bold text-yellow-600">
+                                Rp {{ number_format($serviceTotalToday, 0, ',', '.') }}
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Baru: Total Barang/Sparepart -->
+                    <div class="bg-white border shadow-sm sm:rounded-lg">
+                        <div class="p-6">
+                            <h3 class="text-lg font-semibold mb-2">Total Barang</h3>
+                            <p class="text-3xl font-bold text-blue-600">{{ $barangCount }}</p>
                         </div>
                     </div>
                 @endif
