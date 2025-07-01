@@ -69,12 +69,16 @@
                     </div>
                 </div>
 
+                @php
+                    // hitung total subtotals
+                    $totalBarang = $barangs->sum('subtotal');
+                    $totalJasa   = $jasas->sum(fn($j) => $j->harga_jasa);
+                    $grandTotal   = $totalBarang + $totalJasa;
+                @endphp
+
                 {{-- Tabel Barang --}}
                 <div class="mt-8">
                     <h3 class="text-lg font-semibold mb-2">Daftar Barang</h3>
-                    @php
-                        $totalBarang = $barangs->sum('subtotal');
-                    @endphp
                     <table class="w-full border-collapse">
                         <thead>
                             <tr class="bg-gray-100">
@@ -116,10 +120,6 @@
                 {{-- Tabel Jasa --}}
                 <div class="mt-8">
                     <h3 class="text-lg font-semibold mb-2">Daftar Jasa</h3>
-                    @php
-                        // setiap jasa qty=1
-                        $totalJasa = $jasas->sum(fn($j) => $j->harga_jasa);
-                    @endphp
                     @if($jasas->count())
                         <table class="w-full border-collapse">
                             <thead>
@@ -133,7 +133,7 @@
                             <tbody>
                                 @foreach($jasas as $j)
                                     @php
-                                        $qty = 1;
+                                        $qty      = 1;
                                         $subtotal = $j->harga_jasa * $qty;
                                     @endphp
                                     <tr class="hover:bg-gray-50">
@@ -160,6 +160,13 @@
                     @else
                         <p class="text-gray-800">–</p>
                     @endif
+                </div>
+
+                {{-- Grand Total --}}
+                <div class="mt-6 p-4 bg-gray-100 rounded-lg">
+                    <div class="text-right font-bold text-lg">
+                        Grand Total: Rp {{ number_format($grandTotal, 0, ',', '.') }}
+                    </div>
                 </div>
             </div>
         </div>
