@@ -49,6 +49,10 @@
             background: #f2f2f2;
         }
 
+        .text-center {
+            text-align: center;
+        }
+
         .text-right {
             text-align: right;
         }
@@ -67,7 +71,7 @@
             {{ \Carbon\Carbon::parse($transaksi->tanggal_transaksi)->format('d F Y') }}</p>
     </div>
 
-    {{-- Info umum --}}
+    {{-- Info Umum --}}
     <div class="section">
         <table>
             <tr>
@@ -79,46 +83,26 @@
         </table>
     </div>
 
-    {{-- Tabel Barang --}}
-@if ($barangs->count())
-    <div class="section">
-        <h2>Detail Barang</h2>
-        <table>
-            <thead>
-                <tr>
-                    <th>Nama Barang</th>
-                    <th class="text-right">Harga Satuan (Rp)</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach ($barangs as $barang)
-                    <tr>
-                        <td>{{ $barang->nama_barang }}</td>
-                        <td class="text-right">{{ number_format($barang->harga_jual, 0, ',', '.') }}</td>
-                    </tr>
-                @endforeach
-            </tbody>
-        </table>
-    </div>
-@endif
-
-
-    {{-- Tabel Jasa --}}
-    @if ($jasas->count())
+    {{-- Detail Barang --}}
+    @if($barangs->count())
         <div class="section">
-            <h2>Detail Jasa</h2>
+            <h2>Detail Barang</h2>
             <table>
                 <thead>
                     <tr>
-                        <th>Nama Jasa</th>
-                        <th class="text-right">Harga (Rp)</th>
+                        <th>Nama Barang</th>
+                        <th class="text-center">Qty</th>
+                        <th class="text-right">Harga Satuan</th>
+                        <th class="text-right">Subtotal</th>
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach ($jasas as $jasa)
+                    @foreach($barangs as $item)
                         <tr>
-                            <td>{{ $jasa->nama_jasa }}</td>
-                            <td class="text-right">{{ number_format($jasa->harga_jasa, 0, ',', '.') }}</td>
+                            <td>{{ $item->model->nama_barang }}</td>
+                            <td class="text-center">{{ $item->qty }}</td>
+                            <td class="text-right">Rp {{ number_format($item->model->harga_jual,0,',','.') }}</td>
+                            <td class="text-right">Rp {{ number_format($item->subtotal,0,',','.') }}</td>
                         </tr>
                     @endforeach
                 </tbody>
@@ -126,35 +110,55 @@
         </div>
     @endif
 
+    {{-- Detail Jasa --}}
+    @if($jasas->count())
+        <div class="section">
+            <h2>Detail Jasa</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Nama Jasa</th>
+                        <th class="text-right">Harga</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($jasas as $jasa)
+                        <tr>
+                            <td>{{ $jasa->nama_jasa }}</td>
+                            <td class="text-right">Rp {{ number_format($jasa->harga_jasa,0,',','.') }}</td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+    @endif
 
-    {{-- Ringkasan Total --}}
+    {{-- Ringkasan Pembayaran --}}
     <div class="section">
         <h2>Ringkasan Pembayaran</h2>
         <table>
             <tbody>
                 @php
-                $subtotalBarang = $barangs->sum('harga_jual');
-                $subtotalJasa   = $jasas->sum('harga_jasa');
-                $subtotal       = $subtotalBarang + $subtotalJasa;
-                $diskon         = $subtotal - $transaksi->total_harga;
-            @endphp
-
-
+                    $subtotalBarang = $barangs->sum('subtotal');
+                    $subtotalJasa   = $jasas->sum('harga_jasa');
+                    $subtotal       = $subtotalBarang + $subtotalJasa;
+                    $diskon         = $subtotal - $transaksi->total_harga;
+                @endphp
                 <tr>
                     <td>Subtotal</td>
-                    <td class="text-right">Rp {{ number_format($subtotal, 0, ',', '.') }}</td>
+                    <td class="text-right">Rp {{ number_format($subtotal,0,',','.') }}</td>
                 </tr>
-                @if ($diskon > 0)
+                @if($diskon > 0)
                     <tr>
                         <td>Diskon Member</td>
-                        <td class="text-right">- Rp {{ number_format($diskon, 0, ',', '.') }}</td>
+                        <td class="text-right">- Rp {{ number_format($diskon,0,',','.') }}</td>
                     </tr>
                 @endif
                 <tr class="total-row">
                     <td>Total Bayar</td>
-                    <td class="text-right">Rp {{ number_format($transaksi->total_harga, 0, ',', '.') }}</td>
+                    <td class="text-right">Rp {{ number_format($transaksi->total_harga,0,',','.') }}</td>
                 </tr>
-                @if ($transaksi->points->count())
+                @if($transaksi->points->count())
                     <tr>
                         <td>Poin Diperoleh</td>
                         <td class="text-right">{{ $transaksi->points->sum('jumlah_point') }}</td>
@@ -166,7 +170,7 @@
 
     {{-- Footer --}}
     <div style="text-align:center; font-size:10px; color:#777; margin-top:30px;">
-        Terima kasih atas kepercayaan Anda.<br>
+        Terima kasih atas kepercayaan Anda.
     </div>
 </body>
 
