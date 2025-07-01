@@ -96,4 +96,31 @@ public function jasaModels()
     {
         return $this->belongsTo(Teknisi::class, 'id_teknisi');
     }
+
+     /**
+     * Kembalikan koleksi barang beserta qty-nya dari JSON id_barang.
+     *
+     * @return \Illuminate\Support\Collection
+     */
+    public function barangWithQty()
+    {
+        $out = collect();
+
+        // Pastikan id_barang sudah berupa array key=>qty
+        $arr = $this->id_barang ?: [];
+
+        foreach ($arr as $barangId => $qty) {
+            $barang = Barang::find($barangId);
+            if (! $barang) {
+                continue;
+            }
+            $out->push((object)[
+                'model' => $barang,
+                'qty'   => $qty,
+                'subtotal' => $barang->harga_jual * $qty,
+            ]);
+        }
+
+        return $out;
+    }
 }
