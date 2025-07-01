@@ -26,14 +26,15 @@ class TransaksiTable extends DataTableComponent
         if ($t && in_array($newStatus, ['proses','selesai','diambil'], true)) {
             $t->status_service = $newStatus;
             $t->save();
-        }
-        $k=Konsumen::find($t->id_konsumen);
-        // If the status is 'diambil', increment konsumen's jumlah_point
-        if ($newStatus === 'diambil') {
 
-             $k->increment('jumlah_point', 1);
+            // Jika berpindah ke 'diambil', beri 1 poin ke konsumen
+            if ($newStatus === 'diambil') {
+                $k = Konsumen::find($t->id_konsumen);
+                $k->increment('jumlah_point', 1);
+            }
         }
-        // refresh the table data
+
+        // refresh table
         $this->dispatch('refreshDatatable');
     }
 
@@ -63,18 +64,26 @@ class TransaksiTable extends DataTableComponent
                 ->sortable()
                 ->searchable(),
 
-            // Inline-editable Status Service with Livewire action
+            // Hanya tampilkan dropdown jika ada jasa, jika tidak tampilkan '-'
             Column::make('Status Service')
                 ->html()
-                ->format(fn($_, $row) =>
-                    "<select
-                        wire:change=\"updateStatus({$row->id_transaksi}, \$event.target.value)\"
-                        class=\"border rounded px-4 py-1 px-2 bg-white\">
-                        <option value=\"proses\" " . ($row->status_service === 'proses' ? 'selected' : '') . ">Proses</option>
-                        <option value=\"selesai\" " . ($row->status_service === 'selesai' ? 'selected' : '') . ">Selesai</option>
-                        <option value=\"diambil\" " . ($row->status_service === 'diambil' ? 'selected' : '') . ">Diambil</option>
-                     </select>"
-                ),
+                ->format(function($_, $row) {
+                    if (empty($row->id_jasa)) {
+                        return '<span class="text-gray-500">-</span>';
+                    }
+                    $opts = [
+                        'proses'  => 'Proses',
+                        'selesai' => 'Selesai',
+                        'diambil' => 'Diambil',
+                    ];
+                    $html = '<select wire:change="updateStatus('.$row->id_transaksi.', $event.target.value)" class="border rounded px-2 py-1 bg-white">';
+                    foreach ($opts as $value => $label) {
+                        $sel = $row->status_service === $value ? ' selected' : '';
+                        $html .= "<option value=\"{$value}\"{$sel}>{$label}</option>";
+                    }
+                    $html .= '</select>';
+                    return $html;
+                }),
 
             Column::make('Estimasi Pengerjaan', 'estimasi_pengerjaan')
                 ->sortable()
@@ -87,9 +96,9 @@ class TransaksiTable extends DataTableComponent
                 )
                 ->searchable(),
 
-                LinkColumn::make('Action')
-        ->title(fn($row) => 'Detail')
-        ->location(fn($row) => route('transaksi.show', $row->id_transaksi)),
-            ];
+            LinkColumn::make('Aksi')
+                ->title(fn($row) => 'Detail')
+                ->location(fn($row) => route('transaksi.show', $row->id_transaksi)),
+        ];
     }
 }
