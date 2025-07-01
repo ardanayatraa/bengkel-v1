@@ -19,35 +19,35 @@ class TrxBarangMasukTable extends DataTableComponent
     }
 
     /**
-     * Definisi filters: filter per barang & rentang tanggal.
+     * Definisi filter: per Barang & rentang tanggal masuk.
      */
     public function filters(): array
     {
+        // ambil nama tabel model agar bisa diprefix di where
+        $table = (new TrxBarangMasuk)->getTable(); // misal 'trx_barang_masuks'
+
         return [
-            // Dropdown pilih Barang
             SelectFilter::make('Barang')
                 ->options(
-                    // ambil daftar barang: [id => nama]
                     Barang::orderBy('nama_barang')
                           ->pluck('nama_barang', 'id_barang')
                           ->toArray()
                 )
-                ->filter(function($query, $value) {
+                ->filter(function($query, $value) use ($table) {
                     if ($value) {
-                        $query->where('id_barang', $value);
+                        // prefix dengan nama tabel untuk menghindari ambigu
+                        $query->where("{$table}.id_barang", $value);
                     }
                 }),
 
-            // Tanggal Mulai (>=)
             DateFilter::make('Dari')
-                ->filter(function($query, $value) {
-                    $query->whereDate('tanggal_masuk', '>=', $value);
+                ->filter(function($query, $value) use ($table) {
+                    $query->whereDate("{$table}.tanggal_masuk", '>=', $value);
                 }),
 
-            // Tanggal Akhir (<=)
             DateFilter::make('Sampai')
-                ->filter(function($query, $value) {
-                    $query->whereDate('tanggal_masuk', '<=', $value);
+                ->filter(function($query, $value) use ($table) {
+                    $query->whereDate("{$table}.tanggal_masuk", '<=', $value);
                 }),
         ];
     }
@@ -55,11 +55,10 @@ class TrxBarangMasukTable extends DataTableComponent
     public function columns(): array
     {
         return [
-            Column::make("Id trx barang masuk", "id_trx_barang_masuk")
+            Column::make("ID Transaksi Masuk", "id_trx_barang_masuk")
                 ->sortable()
-                ->format(
-                    fn($value) =>
-                        '<a href="'.route('trx-barang-masuk.show', $value).'" class="text-blue-600 hover:underline">'.$value.'</a>'
+                ->format(fn($value) =>
+                    '<a href="'.route('trx-barang-masuk.show', $value).'" class="text-blue-600 hover:underline">'.$value.'</a>'
                 )
                 ->html(),
 
@@ -69,22 +68,23 @@ class TrxBarangMasukTable extends DataTableComponent
             Column::make("Supplier", "barang.supplier.nama_supplier")
                 ->sortable(),
 
-            Column::make("Tanggal masuk", "tanggal_masuk")
+            Column::make("Tanggal Masuk", "tanggal_masuk")
                 ->sortable(),
 
             Column::make("Jumlah", "jumlah")
                 ->sortable(),
 
-            Column::make("Total harga", "total_harga")
+            Column::make("Total Harga", "total_harga")
                 ->sortable(),
 
-            Column::make('Aksi')->label(
-                fn ($row) => view('components.table-actions', [
-                    'editRoute'   => route('trx-barang-masuk.edit', $row->id_trx_barang_masuk),
-                    'deleteRoute' => route('trx-barang-masuk.destroy', $row->id_trx_barang_masuk),
-                    'modalId'     => 'delete-trx-barang-masuk-' . $row->id_trx_barang_masuk,
-                ])
-            ),
+            Column::make('Aksi')
+                ->label(fn($row) =>
+                    view('components.table-actions', [
+                        'editRoute'   => route('trx-barang-masuk.edit',   $row->id_trx_barang_masuk),
+                        'deleteRoute' => route('trx-barang-masuk.destroy',$row->id_trx_barang_masuk),
+                        'modalId'     => 'delete-trx-barang-masuk-'.$row->id_trx_barang_masuk,
+                    ])
+                ),
         ];
     }
 }
