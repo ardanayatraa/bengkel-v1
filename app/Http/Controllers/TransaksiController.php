@@ -2,15 +2,16 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Http\Request;
 use App\Models\Transaksi;
 use App\Models\Konsumen;
 use App\Models\Barang;
 use App\Models\Jasa;
 use App\Models\Teknisi;
 use App\Models\Point;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Carbon\Carbon;
 
 class TransaksiController extends Controller
 {
@@ -47,40 +48,49 @@ class TransaksiController extends Controller
             'estimasi_pengerjaan' => 'nullable|string|max:191',
         ]);
 
-        if (!empty($v['id_jasa']) && empty(trim($v['estimasi_pengerjaan']))) {
+        // validasi estimasi jika ada jasa
+        if (! empty($v['id_jasa']) && empty(trim($v['estimasi_pengerjaan']))) {
             return back()->withInput()
                          ->withErrors(['estimasi_pengerjaan'=>'Estimasi wajib diisi jika ada jasa.']);
         }
 
         $k = Konsumen::findOrFail($v['id_konsumen']);
 
-        // Build JSON barang=>qty
+        // bangun JSON barang => qty
         $barangJson = [];
         foreach ($v['id_barang'] ?? [] as $id) {
             $barangJson[$id] = $v['qty_barang'][$id] ?? 1;
         }
 
-        // Hitung total harga barang
-        $totalBarang = 0;
-        foreach ($barangJson as $id=>$qty) {
-            $totalBarang += Barang::find($id)->harga_jual * $qty;
-        }
+        // hitung subtotal barang
+        $totalBarang = collect($barangJson)
+            ->sum(function($qty, $id) {
+                return Barang::find($id)->harga_jual * $qty;
+            });
 
-        // Hitung total jasa
+        // hitung subtotal jasa
         $totalJasa = collect($v['id_jasa'] ?? [])
-            ->map(fn($i)=> Jasa::find($i)->harga_jasa)
-            ->sum();
+            ->sum(fn($i) => Jasa::find($i)->harga_jasa);
 
-        $total = $totalBarang + $totalJasa;
+        $subtotal = $totalBarang + $totalJasa;
 
-        // Diskon member
+        // diskon 10k jika member & poin >= 10
+        $diskon = 0;
         if (strtolower($k->keterangan) === 'member' && $k->jumlah_point >= 10) {
-            $total -= 10000;
+            $diskon = 10000;
             $k->decrement('jumlah_point', 10);
+            Point::create([
+                'id_konsumen'  => $k->id_konsumen,
+                'id_transaksi' => null,
+                'tanggal'      => now()->toDateString(),
+                'jumlah_point' => -10,
+            ]);
         }
+
+        $totalAkhir = $subtotal - $diskon;
 
         $t = Transaksi::create([
-            'id_konsumen'         => $v['id_konsumen'],
+            'id_konsumen'         => $k->id_konsumen,
             'id_teknisi'          => $v['id_teknisi'] ?? null,
             'id_barang'           => $barangJson,
             'id_jasa'             => $v['id_jasa'] ?? [],
@@ -88,11 +98,12 @@ class TransaksiController extends Controller
             'metode_pembayaran'   => $v['metode_pembayaran'],
             'status_service'      => $v['status_service'],
             'estimasi_pengerjaan' => $v['estimasi_pengerjaan'] ?? null,
-            'total_harga'         => $total,
+            'total_harga'         => $totalAkhir,
             'id_user'             => Auth::id(),
         ]);
 
-        if (strtolower($k->keterangan) === 'member' && !empty($v['id_jasa'])) {
+        // catat poin positif jika ada jasa
+        if (strtolower($k->keterangan) === 'member' && ! empty($v['id_jasa'])) {
             Point::create([
                 'id_konsumen'  => $k->id_konsumen,
                 'id_transaksi' => $t->id_transaksi,
@@ -119,6 +130,7 @@ class TransaksiController extends Controller
     public function update(Request $request, $id)
     {
         $v = $request->validate([
+            // sama seperti store, tanpa pengurangan poin
             'id_konsumen'         => 'required|exists:konsumens,id_konsumen',
             'id_teknisi'          => 'nullable|exists:teknisis,id_teknisi',
             'id_barang'           => 'nullable|array',
@@ -133,31 +145,29 @@ class TransaksiController extends Controller
             'estimasi_pengerjaan' => 'nullable|string|max:191',
         ]);
 
-        if (!empty($v['id_jasa']) && empty(trim($v['estimasi_pengerjaan']))) {
+        if (! empty($v['id_jasa']) && empty(trim($v['estimasi_pengerjaan']))) {
             return back()->withInput()
                          ->withErrors(['estimasi_pengerjaan'=>'Estimasi wajib diisi jika ada jasa.']);
         }
 
-        $k = Konsumen::findOrFail($v['id_konsumen']);
-
-        // Rebuild JSON barang=>qty & hitung total sama seperti di store
+        // rebuild & hitung total sama seperti di store (tanpa decrement poin)
         $barangJson = [];
         foreach ($v['id_barang'] ?? [] as $id) {
             $barangJson[$id] = $v['qty_barang'][$id] ?? 1;
         }
-        $totalBarang = array_reduce(array_keys($barangJson), function($sum,$id) use($barangJson){
-            return $sum + Barang::find($id)->harga_jual * $barangJson[$id];
-        }, 0);
+        $totalBarang = collect($barangJson)
+            ->sum(fn($qty, $id) => Barang::find($id)->harga_jual * $qty);
         $totalJasa = collect($v['id_jasa'] ?? [])
-            ->map(fn($i)=> Jasa::find($i)->harga_jasa)
-            ->sum();
-        $total = $totalBarang + $totalJasa;
+            ->sum(fn($i) => Jasa::find($i)->harga_jasa);
+        $subtotal = $totalBarang + $totalJasa;
+        $diskon   = 0;
+        $k = Konsumen::findOrFail($v['id_konsumen']);
         if (strtolower($k->keterangan) === 'member' && $k->jumlah_point >= 10) {
-            $total -= 10000;
+            $diskon = 10000;
         }
+        $totalAkhir = $subtotal - $diskon;
 
-        $t = Transaksi::findOrFail($id);
-        $t->update([
+        Transaksi::findOrFail($id)->update([
             'id_konsumen'         => $v['id_konsumen'],
             'id_teknisi'          => $v['id_teknisi'] ?? null,
             'id_barang'           => $barangJson,
@@ -166,7 +176,7 @@ class TransaksiController extends Controller
             'metode_pembayaran'   => $v['metode_pembayaran'],
             'status_service'      => $v['status_service'],
             'estimasi_pengerjaan' => $v['estimasi_pengerjaan'] ?? null,
-            'total_harga'         => $total,
+            'total_harga'         => $totalAkhir,
         ]);
 
         return redirect()->route('transaksi.index')
@@ -193,8 +203,23 @@ class TransaksiController extends Controller
         $transaksi = Transaksi::with(['konsumen','teknisi','points'])->findOrFail($id);
         $barangs   = $transaksi->barangWithQty();
         $jasas     = $transaksi->jasaModels();
-        $pdf = Pdf::loadView('transaksi.print', compact('transaksi','barangs','jasas'))
-                  ->setPaper('a4','portrait');
+
+        // subtotal sebelum diskon
+        $subtotalBarang = $barangs->sum('subtotal');
+        $subtotalJasa   = collect($jasas)->sum(fn($j) => $j->harga_jasa);
+        $subtotal       = $subtotalBarang + $subtotalJasa;
+
+        // diskon = selisih subtotal & total_harga
+        $diskon  = max(0, $subtotal - $transaksi->total_harga);
+
+        // poin tersisa
+        $sisaPoint = $transaksi->konsumen->jumlah_point;
+
+        $pdf = Pdf::loadView('transaksi.print', compact(
+            'transaksi','barangs','jasas','subtotal','diskon','sisaPoint'
+        ))
+        ->setPaper('a4','portrait');
+
         return $pdf->download("transaksi_{$transaksi->id_transaksi}.pdf");
     }
 }
