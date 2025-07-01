@@ -172,8 +172,15 @@ class TransaksiController extends Controller
     public function print($id)
     {
         $transaksi = Transaksi::with(['konsumen','teknisi','points'])->findOrFail($id);
-        $pdf = Pdf::loadView('transaksi.print', compact('transaksi'))
-                  ->setPaper('a4','portrait');
+
+        // Ambil semua barang dan jasa
+        $barangs = $transaksi->barangModels();
+        $jasas   = $transaksi->jasaModels();
+
+        $pdf = Pdf::loadView('transaksi.print', compact('transaksi', 'barangs', 'jasas'))
+                ->setPaper('a4','portrait');
+        
         return $pdf->download("transaksi_{$transaksi->id_transaksi}.pdf");
     }
+
 }

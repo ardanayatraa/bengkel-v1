@@ -40,7 +40,7 @@
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-600">Konsumen</label>
-                            <p class="mt-1 text-gray-800">{{ $transaksi->konsumen->nama }}</p>
+                            <p class="mt-1 text-gray-800">{{ $transaksi->konsumen->nama_konsumen }}</p>
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-600">Metode Pembayaran</label>

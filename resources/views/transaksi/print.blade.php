@@ -72,7 +72,7 @@
         <table>
             <tr>
                 <th>Konsumen</th>
-                <td>{{ $transaksi->konsumen->nama }}</td>
+                <td>{{ $transaksi->konsumen->nama_konsumen }}</td>
                 <th>Metode Bayar</th>
                 <td>{{ ucfirst($transaksi->metode_pembayaran) }}</td>
             </tr>
@@ -80,28 +80,31 @@
     </div>
 
     {{-- Tabel Barang --}}
-    @if ($transaksi->barang)
-        <div class="section">
-            <h2>Detail Barang</h2>
-            <table>
-                <thead>
+@if ($barangs->count())
+    <div class="section">
+        <h2>Detail Barang</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Nama Barang</th>
+                    <th class="text-right">Harga Satuan (Rp)</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach ($barangs as $barang)
                     <tr>
-                        <th>Nama Barang</th>
-                        <th class="text-right">Harga Satuan (Rp)</th>
+                        <td>{{ $barang->nama_barang }}</td>
+                        <td class="text-right">{{ number_format($barang->harga_jual, 0, ',', '.') }}</td>
                     </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td>{{ $transaksi->barang->nama_barang }}</td>
-                        <td class="text-right">{{ number_format($transaksi->barang->harga_jual, 0, ',', '.') }}</td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-    @endif
+                @endforeach
+            </tbody>
+        </table>
+    </div>
+@endif
+
 
     {{-- Tabel Jasa --}}
-    @if ($transaksi->jasa)
+    @if ($jasas->count())
         <div class="section">
             <h2>Detail Jasa</h2>
             <table>
@@ -112,14 +115,17 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <tr>
-                        <td>{{ $transaksi->jasa->nama_jasa }}</td>
-                        <td class="text-right">{{ number_format($transaksi->jasa->harga, 0, ',', '.') }}</td>
-                    </tr>
+                    @foreach ($jasas as $jasa)
+                        <tr>
+                            <td>{{ $jasa->nama_jasa }}</td>
+                            <td class="text-right">{{ number_format($jasa->harga_jasa, 0, ',', '.') }}</td>
+                        </tr>
+                    @endforeach
                 </tbody>
             </table>
         </div>
     @endif
+
 
     {{-- Ringkasan Total --}}
     <div class="section">
@@ -127,11 +133,12 @@
         <table>
             <tbody>
                 @php
-                    $subtotalBarang = $transaksi->barang ? $transaksi->barang->harga_jual : 0;
-                    $subtotalJasa = $transaksi->jasa ? $transaksi->jasa->harga : 0;
-                    $subtotal = $subtotalBarang + $subtotalJasa;
-                    $diskon = $subtotal - $transaksi->total_harga;
-                @endphp
+                $subtotalBarang = $barangs->sum('harga_jual');
+                $subtotalJasa   = $jasas->sum('harga_jasa');
+                $subtotal       = $subtotalBarang + $subtotalJasa;
+                $diskon         = $subtotal - $transaksi->total_harga;
+            @endphp
+
 
                 <tr>
                     <td>Subtotal</td>
