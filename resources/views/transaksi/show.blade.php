@@ -107,19 +107,42 @@
                     </table>
                 </div>
 
-                {{-- List Jasa --}}
-                <div class="mt-8">
-                    <h3 class="text-lg font-semibold mb-2">Daftar Jasa</h3>
-                    @if($jasas->count())
-                        <ul class="list-disc list-inside text-gray-800">
-                            @foreach($jasas as $j)
-                                <li>{{ $j->nama_jasa }} — Rp {{ number_format($j->harga_jasa,0,',','.') }}</li>
-                            @endforeach
-                        </ul>
-                    @else
-                        <p class="text-gray-800">–</p>
-                    @endif
-                </div>
+              {{-- List Jasa --}}
+<div class="mt-8">
+    <h3 class="text-lg font-semibold mb-2">Daftar Jasa</h3>
+
+    @if($jasas->count())
+        <table class="w-full border-collapse">
+            <thead>
+                <tr class="bg-gray-100">
+                    <th class="border p-2 text-left">Nama Jasa</th>
+                    <th class="border p-2 text-right">Harga Satuan</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach($jasas as $j)
+                    <tr class="hover:bg-gray-50">
+                        <td class="border p-2">{{ $j->nama_jasa }}</td>
+                        <td class="border p-2 text-right">
+                            Rp {{ number_format($j->harga_jasa, 0, ',', '.') }}
+                        </td>
+                    </tr>
+                @endforeach
+            </tbody>
+            <tfoot>
+                <tr class="font-semibold bg-gray-50">
+                    <td class="border p-2 text-right">Total Jasa:</td>
+                    <td class="border p-2 text-right">
+                        Rp {{ number_format($jasas->sum('harga_jasa'), 0, ',', '.') }}
+                    </td>
+                </tr>
+            </tfoot>
+        </table>
+    @else
+        <p class="text-gray-800">–</p>
+    @endif
+</div>
+
 
             </div>
         </div>
