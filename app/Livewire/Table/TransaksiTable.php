@@ -7,7 +7,7 @@ use App\Models\Transaksi;
 use Rappasoft\LaravelLivewireTables\DataTableComponent;
 use Rappasoft\LaravelLivewireTables\Views\Column;
 use Rappasoft\LaravelLivewireTables\Views\Columns\LinkColumn;
-
+use Illuminate\Database\Eloquent\Builder;
 class TransaksiTable extends DataTableComponent
 {
     public string $type = 'mix';  // default: tampilkan semua
@@ -31,7 +31,7 @@ class TransaksiTable extends DataTableComponent
     /**
      * Override builder() untuk mem‐filter berdasarkan $this->type
      */
-    public function builder()
+    public function builder(): Builder
     {
         $q = Transaksi::with(['konsumen','teknisi','points']);
         return match($this->type) {
