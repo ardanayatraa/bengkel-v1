@@ -68,22 +68,29 @@ class TransaksiTable extends DataTableComponent
             Column::make('Status Service')
                 ->html()
                 ->format(function($_, $row) {
-                    if (empty($row->id_jasa)) {
+                    // $row->id_jasa di-cast ke array oleh Model
+                    $jasaCount = is_array($row->id_jasa) ? count($row->id_jasa) : 0;
+
+                    if ($jasaCount === 0) {
                         return '<span class="text-gray-500">-</span>';
                     }
+
                     $opts = [
                         'proses'  => 'Proses',
                         'selesai' => 'Selesai',
                         'diambil' => 'Diambil',
                     ];
+
                     $html = '<select wire:change="updateStatus('.$row->id_transaksi.', $event.target.value)" class="border rounded px-2 py-1 bg-white">';
                     foreach ($opts as $value => $label) {
                         $sel = $row->status_service === $value ? ' selected' : '';
                         $html .= "<option value=\"{$value}\"{$sel}>{$label}</option>";
                     }
                     $html .= '</select>';
+
                     return $html;
                 }),
+
 
             Column::make('Estimasi Pengerjaan', 'estimasi_pengerjaan')
                 ->sortable()
