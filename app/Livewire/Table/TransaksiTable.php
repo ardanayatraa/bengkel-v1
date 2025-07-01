@@ -2,11 +2,14 @@
 
 namespace App\Livewire\Table;
 
-use App\Models\Konsumen;
 use App\Models\Transaksi;
+use App\Models\Konsumen;
 use Rappasoft\LaravelLivewireTables\DataTableComponent;
 use Rappasoft\LaravelLivewireTables\Views\Column;
 use Rappasoft\LaravelLivewireTables\Views\Columns\LinkColumn;
+// import filter classes
+use Rappasoft\LaravelLivewireTables\Filters\SelectFilter;
+use Rappasoft\LaravelLivewireTables\Filters\DateFilter;
 
 class TransaksiTable extends DataTableComponent
 {
@@ -18,23 +21,37 @@ class TransaksiTable extends DataTableComponent
     }
 
     /**
-     * Livewire action to update status_service on the fly.
+     * Tambahkan method filters() untuk definisi filter.
      */
-    public function updateStatus(int $id, string $newStatus): void
+    public function filters(): array
     {
-        $t = Transaksi::find($id);
-        if ($t && in_array($newStatus, ['proses','selesai','diambil'], true)) {
-            $t->status_service = $newStatus;
-            $t->save();
-        }
-        $k=Konsumen::find($t->id_konsumen);
-        // If the status is 'diambil', increment konsumen's jumlah_point
-        if ($newStatus === 'diambil') {
+        return [
+            // Filter Status Service
+            SelectFilter::make('Status Service')
+                ->options([
+                    ''        => 'Semua',
+                    'proses'  => 'Proses',
+                    'selesai' => 'Selesai',
+                    'diambil' => 'Diambil',
+                ])
+                ->filter(function($query, $value) {
+                    if ($value !== '') {
+                        $query->where('status_service', $value);
+                    }
+                }),
 
-             $k->increment('jumlah_point', 1);
-        }
-        // refresh the table data
-        $this->dispatch('refreshDatatable');
+            // Filter Tanggal Mulai (>=)
+            DateFilter::make('Dari')
+                ->filter(function($query, $value) {
+                    $query->whereDate('tanggal_transaksi', '>=', $value);
+                }),
+
+            // Filter Tanggal Akhir (<=)
+            DateFilter::make('Sampai')
+                ->filter(function($query, $value) {
+                    $query->whereDate('tanggal_transaksi', '<=', $value);
+                }),
+        ];
     }
 
     public function columns(): array
@@ -63,17 +80,16 @@ class TransaksiTable extends DataTableComponent
                 ->sortable()
                 ->searchable(),
 
-            // Inline-editable Status Service with Livewire action
             Column::make('Status Service')
                 ->html()
                 ->format(fn($_, $row) =>
                     "<select
                         wire:change=\"updateStatus({$row->id_transaksi}, \$event.target.value)\"
-                        class=\"border rounded px-4 py-1 px-2 bg-white\">
+                        class=\"border rounded px-2 py-1 bg-white\">
                         <option value=\"proses\" " . ($row->status_service === 'proses' ? 'selected' : '') . ">Proses</option>
                         <option value=\"selesai\" " . ($row->status_service === 'selesai' ? 'selected' : '') . ">Selesai</option>
                         <option value=\"diambil\" " . ($row->status_service === 'diambil' ? 'selected' : '') . ">Diambil</option>
-                     </select>"
+                    </select>"
                 ),
 
             Column::make('Estimasi Pengerjaan', 'estimasi_pengerjaan')
@@ -87,9 +103,29 @@ class TransaksiTable extends DataTableComponent
                 )
                 ->searchable(),
 
-                LinkColumn::make('Action')
-        ->title(fn($row) => 'Detail')
-        ->location(fn($row) => route('transaksi.show', $row->id_transaksi)),
-            ];
+            LinkColumn::make('Action')
+                ->title(fn($row) => 'Detail')
+                ->location(fn($row) => route('transaksi.show', $row->id_transaksi)),
+        ];
+    }
+
+    /**
+     * Livewire action to update status_service on the fly.
+     */
+    public function updateStatus(int $id, string $newStatus): void
+    {
+        $t = Transaksi::find($id);
+        if ($t && in_array($newStatus, ['proses','selesai','diambil'], true)) {
+            $t->status_service = $newStatus;
+            $t->save();
+
+            if ($newStatus === 'diambil') {
+                $k = Konsumen::find($t->id_konsumen);
+                $k->increment('jumlah_point', 1);
+            }
+        }
+
+        // refresh the table data
+        $this->dispatch('refreshDatatable');
     }
 }
