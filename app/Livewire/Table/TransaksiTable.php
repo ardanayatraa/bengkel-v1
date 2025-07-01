@@ -31,9 +31,7 @@ class TransaksiTable extends DataTableComponent
         // If the status is 'diambil', increment konsumen's jumlah_point
         if ($newStatus === 'diambil') {
 
-            $k->jumlah_point->jumlah_point += 1;
-            $k->jumlah_point->save();
-
+             $k->increment('jumlah_point', 1);
         }
         // refresh the table data
         $this->dispatch('refreshDatatable');
