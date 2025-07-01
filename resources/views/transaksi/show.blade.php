@@ -27,6 +27,7 @@
 
             {{-- Body --}}
             <div class="px-6 py-8">
+                {{-- Meta --}}
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
                     {{-- kiri --}}
                     <div class="space-y-4">
@@ -71,6 +72,9 @@
                 {{-- Tabel Barang --}}
                 <div class="mt-8">
                     <h3 class="text-lg font-semibold mb-2">Daftar Barang</h3>
+                    @php
+                        $totalBarang = $barangs->sum('subtotal');
+                    @endphp
                     <table class="w-full border-collapse">
                         <thead>
                             <tr class="bg-gray-100">
@@ -82,68 +86,81 @@
                         </thead>
                         <tbody>
                             @forelse($barangs as $item)
-                                <tr>
+                                <tr class="hover:bg-gray-50">
                                     <td class="border p-2">{{ $item->model->nama_barang }}</td>
                                     <td class="border p-2 text-center">{{ $item->qty }}</td>
                                     <td class="border p-2 text-right">
-                                        Rp {{ number_format($item->model->harga_jual,0,',','.') }}
+                                        Rp {{ number_format($item->model->harga_jual, 0, ',', '.') }}
                                     </td>
                                     <td class="border p-2 text-right">
-                                        Rp {{ number_format($item->subtotal,0,',','.') }}
+                                        Rp {{ number_format($item->subtotal, 0, ',', '.') }}
                                     </td>
                                 </tr>
                             @empty
-                                <tr><td colspan="4" class="border p-2 text-center text-gray-500">Tidak ada barang</td></tr>
+                                <tr>
+                                    <td colspan="4" class="border p-2 text-center text-gray-500">Tidak ada barang</td>
+                                </tr>
                             @endforelse
                         </tbody>
                         <tfoot>
-                            <tr class="font-semibold">
+                            <tr class="font-semibold bg-gray-50">
                                 <td colspan="3" class="border p-2 text-right">Total Barang:</td>
                                 <td class="border p-2 text-right">
-                                    Rp {{ number_format($barangs->sum('subtotal'),0,',','.') }}
+                                    Rp {{ number_format($totalBarang, 0, ',', '.') }}
                                 </td>
                             </tr>
                         </tfoot>
                     </table>
                 </div>
 
-              {{-- List Jasa --}}
-<div class="mt-8">
-    <h3 class="text-lg font-semibold mb-2">Daftar Jasa</h3>
-
-    @if($jasas->count())
-        <table class="w-full border-collapse">
-            <thead>
-                <tr class="bg-gray-100">
-                    <th class="border p-2 text-left">Nama Jasa</th>
-                    <th class="border p-2 text-right">Harga Satuan</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach($jasas as $j)
-                    <tr class="hover:bg-gray-50">
-                        <td class="border p-2">{{ $j->nama_jasa }}</td>
-                        <td class="border p-2 text-right">
-                            Rp {{ number_format($j->harga_jasa, 0, ',', '.') }}
-                        </td>
-                    </tr>
-                @endforeach
-            </tbody>
-            <tfoot>
-                <tr class="font-semibold bg-gray-50">
-                    <td class="border p-2 text-right">Total Jasa:</td>
-                    <td class="border p-2 text-right">
-                        Rp {{ number_format($jasas->sum('harga_jasa'), 0, ',', '.') }}
-                    </td>
-                </tr>
-            </tfoot>
-        </table>
-    @else
-        <p class="text-gray-800">–</p>
-    @endif
-</div>
-
-
+                {{-- Tabel Jasa --}}
+                <div class="mt-8">
+                    <h3 class="text-lg font-semibold mb-2">Daftar Jasa</h3>
+                    @php
+                        // setiap jasa qty=1
+                        $totalJasa = $jasas->sum(fn($j) => $j->harga_jasa);
+                    @endphp
+                    @if($jasas->count())
+                        <table class="w-full border-collapse">
+                            <thead>
+                                <tr class="bg-gray-100">
+                                    <th class="border p-2 text-left">Nama Jasa</th>
+                                    <th class="border p-2 text-center">Qty</th>
+                                    <th class="border p-2 text-right">Harga Satuan</th>
+                                    <th class="border p-2 text-right">Subtotal</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach($jasas as $j)
+                                    @php
+                                        $qty = 1;
+                                        $subtotal = $j->harga_jasa * $qty;
+                                    @endphp
+                                    <tr class="hover:bg-gray-50">
+                                        <td class="border p-2">{{ $j->nama_jasa }}</td>
+                                        <td class="border p-2 text-center">{{ $qty }}</td>
+                                        <td class="border p-2 text-right">
+                                            Rp {{ number_format($j->harga_jasa, 0, ',', '.') }}
+                                        </td>
+                                        <td class="border p-2 text-right">
+                                            Rp {{ number_format($subtotal, 0, ',', '.') }}
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                            <tfoot>
+                                <tr class="font-semibold bg-gray-50">
+                                    <td colspan="3" class="border p-2 text-right">Total Jasa:</td>
+                                    <td class="border p-2 text-right">
+                                        Rp {{ number_format($totalJasa, 0, ',', '.') }}
+                                    </td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    @else
+                        <p class="text-gray-800">–</p>
+                    @endif
+                </div>
             </div>
         </div>
     </div>
