@@ -10,7 +10,7 @@ use Carbon\Carbon;
 class LaporanJasaController extends Controller
 {
     /**
-     * Tampilkan halaman laporan jasa dengan filter tanggal dan pencarian konsumen.
+     * Tampilkan halaman laporan jasa dengan filter tanggal dan pencarian.
      */
     public function index(Request $request)
     {
@@ -19,7 +19,6 @@ class LaporanJasaController extends Controller
         $search = $request->input('search');
 
         $query = Transaksi::with('konsumen')
-            // pastikan transaksi punya satu atau lebih jasa
             ->whereJsonLength('id_jasa', '>', 0);
 
         if ($start) {
@@ -32,7 +31,8 @@ class LaporanJasaController extends Controller
 
         if ($search) {
             $query->whereHas('konsumen', function ($q) use ($search) {
-                $q->where('nama_konsumen', 'like', "%{$search}%");
+                $q->where('nama_konsumen', 'like', "%{$search}%")
+                  ->orWhere('no_kendaraan', 'like', "%{$search}%");
             });
         }
 
@@ -60,7 +60,8 @@ class LaporanJasaController extends Controller
 
         if ($search) {
             $query->whereHas('konsumen', function ($q) use ($search) {
-                $q->where('nama_konsumen', 'like', "%{$search}%");
+                $q->where('nama_konsumen', 'like', "%{$search}%")
+                  ->orWhere('no_kendaraan', 'like', "%{$search}%");
             });
         }
 
@@ -68,7 +69,7 @@ class LaporanJasaController extends Controller
             ->orderByDesc('tanggal_transaksi')
             ->get();
 
-        $pdf = Pdf::loadView('laporan.jasa.pdf', compact('transaksis','start','end'))
+        $pdf = Pdf::loadView('laporan.jasa.pdf', compact('transaksis','start','end','search'))
                   ->setPaper('a4','landscape');
 
         return $pdf->download("laporan-transaksi-jasa_{$start}_to_{$end}.pdf");
