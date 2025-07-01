@@ -148,12 +148,7 @@
                     <td>Subtotal</td>
                     <td class="text-right">Rp {{ number_format($subtotal,0,',','.') }}</td>
                 </tr>
-                @if($diskon > 0)
-                    <tr>
-                        <td>Diskon Member</td>
-                        <td class="text-right">- Rp {{ number_format($diskon,0,',','.') }}</td>
-                    </tr>
-                @endif
+               
                 <tr class="total-row">
                     <td>Total Bayar</td>
                     <td class="text-right">Rp {{ number_format($transaksi->total_harga,0,',','.') }}</td>
