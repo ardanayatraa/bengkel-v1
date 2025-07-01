@@ -7,9 +7,8 @@ use App\Models\Konsumen;
 use Rappasoft\LaravelLivewireTables\DataTableComponent;
 use Rappasoft\LaravelLivewireTables\Views\Column;
 use Rappasoft\LaravelLivewireTables\Views\Columns\LinkColumn;
-// import filter classes
-use Rappasoft\LaravelLivewireTables\Filters\SelectFilter;
-use Rappasoft\LaravelLivewireTables\Filters\DateFilter;
+use Rappasoft\LaravelLivewireTables\Views\Filters\SelectFilter;
+use Rappasoft\LaravelLivewireTables\Views\Filters\DateFilter;
 
 class TransaksiTable extends DataTableComponent
 {
@@ -20,13 +19,9 @@ class TransaksiTable extends DataTableComponent
         $this->setPrimaryKey('id_transaksi');
     }
 
-    /**
-     * Tambahkan method filters() untuk definisi filter.
-     */
     public function filters(): array
     {
         return [
-            // Filter Status Service
             SelectFilter::make('Status Service')
                 ->options([
                     ''        => 'Semua',
@@ -34,23 +29,19 @@ class TransaksiTable extends DataTableComponent
                     'selesai' => 'Selesai',
                     'diambil' => 'Diambil',
                 ])
-                ->filter(function($query, $value) {
-                    if ($value !== '') {
-                        $query->where('status_service', $value);
-                    }
-                }),
+                ->filter(fn($query, $value) =>
+                    $value !== '' ? $query->where('status_service', $value) : $query
+                ),
 
-            // Filter Tanggal Mulai (>=)
             DateFilter::make('Dari')
-                ->filter(function($query, $value) {
-                    $query->whereDate('tanggal_transaksi', '>=', $value);
-                }),
+                ->filter(fn($query, $value) =>
+                    $query->whereDate('tanggal_transaksi', '>=', $value)
+                ),
 
-            // Filter Tanggal Akhir (<=)
             DateFilter::make('Sampai')
-                ->filter(function($query, $value) {
-                    $query->whereDate('tanggal_transaksi', '<=', $value);
-                }),
+                ->filter(fn($query, $value) =>
+                    $query->whereDate('tanggal_transaksi', '<=', $value)
+                ),
         ];
     }
 
@@ -62,9 +53,9 @@ class TransaksiTable extends DataTableComponent
                 ->searchable(),
 
             Column::make('Nama Konsumen', 'konsumen.nama_konsumen')
-                ->sortable(fn($query, $direction) =>
+                ->sortable(fn($query, $dir) =>
                     $query->join('konsumens', 'transaksis.id_konsumen', '=', 'konsumens.id_konsumen')
-                          ->orderBy('konsumens.nama_konsumen', $direction)
+                          ->orderBy('konsumens.nama_konsumen', $dir)
                 )
                 ->searchable(),
 
@@ -97,9 +88,9 @@ class TransaksiTable extends DataTableComponent
                 ->searchable(),
 
             Column::make('Teknisi', 'teknisi.nama_teknisi')
-                ->sortable(fn($query, $direction) =>
+                ->sortable(fn($query, $dir) =>
                     $query->leftJoin('teknisis', 'transaksis.id_teknisi', '=', 'teknisis.id_teknisi')
-                          ->orderBy('teknisis.nama_teknisi', $direction)
+                          ->orderBy('teknisis.nama_teknisi', $dir)
                 )
                 ->searchable(),
 
@@ -109,9 +100,6 @@ class TransaksiTable extends DataTableComponent
         ];
     }
 
-    /**
-     * Livewire action to update status_service on the fly.
-     */
     public function updateStatus(int $id, string $newStatus): void
     {
         $t = Transaksi::find($id);
@@ -125,7 +113,6 @@ class TransaksiTable extends DataTableComponent
             }
         }
 
-        // refresh the table data
         $this->dispatch('refreshDatatable');
     }
 }
