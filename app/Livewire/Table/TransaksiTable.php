@@ -7,21 +7,10 @@ use App\Models\Transaksi;
 use Rappasoft\LaravelLivewireTables\DataTableComponent;
 use Rappasoft\LaravelLivewireTables\Views\Column;
 use Rappasoft\LaravelLivewireTables\Views\Columns\LinkColumn;
-use Illuminate\Database\Eloquent\Builder;
+
 class TransaksiTable extends DataTableComponent
 {
-    public string $type = 'mix';  // default: tampilkan semua
-
     protected $model = Transaksi::class;
-
-    /**
-     * Terima parameter `type` dari blade:
-     * @livewire('table.transaksi-table', ['type' => 'barang'])
-     */
-    public function mount($type = 'mix')
-    {
-        $this->type = in_array($type, ['barang','jasa','mix']) ? $type : 'mix';
-    }
 
     public function configure(): void
     {
@@ -29,93 +18,78 @@ class TransaksiTable extends DataTableComponent
     }
 
     /**
-     * Override builder() untuk mem‐filter berdasarkan $this->type
+     * Livewire action to update status_service on the fly.
      */
-    public function builder(): Builder
-    {
-        $q = Transaksi::with(['konsumen','teknisi','points']);
-        return match($this->type) {
-            'barang' => $q->whereJsonLength('id_barang','>',0),
-            'jasa'   => $q->whereJsonLength('id_jasa','>',0),
-            default  => $q,
-        };
-    }
-
     public function updateStatus(int $id, string $newStatus): void
     {
         $t = Transaksi::find($id);
-        if (!$t) return;
-
-        if (in_array($newStatus, ['proses','selesai','diambil'], true)) {
+        if ($t && in_array($newStatus, ['proses','selesai','diambil'], true)) {
             $t->status_service = $newStatus;
             $t->save();
-
-            // jika berpindah ke 'diambil', beri +1 poin
-            if ($newStatus === 'diambil' && $t->konsumen) {
-                $t->konsumen->increment('jumlah_point', 1);
-            }
         }
+        $k=Konsumen::find($t->id_konsumen);
+        // If the status is 'diambil', increment konsumen's jumlah_point
+        if ($newStatus === 'diambil') {
 
+             $k->increment('jumlah_point', 1);
+        }
+        // refresh the table data
         $this->dispatch('refreshDatatable');
     }
 
     public function columns(): array
     {
         return [
-            Column::make('ID', 'id_transaksi')
-                ->sortable()->searchable(),
+            Column::make('ID Transaksi', 'id_transaksi')
+                ->sortable()
+                ->searchable(),
 
-            Column::make('Konsumen', 'konsumen.nama_konsumen')
-                ->sortable(fn($q,$dir) =>
-                    $q->join('konsumens','transaksis.id_konsumen','=','konsumens.id_konsumen')
-                      ->orderBy('konsumens.nama_konsumen',$dir)
+            Column::make('Nama Konsumen', 'konsumen.nama_konsumen')
+                ->sortable(fn($query, $direction) =>
+                    $query->join('konsumens', 'transaksis.id_konsumen', '=', 'konsumens.id_konsumen')
+                          ->orderBy('konsumens.nama_konsumen', $direction)
                 )
                 ->searchable(),
 
-            Column::make('Tanggal', 'tanggal_transaksi')
-                ->sortable()->searchable(),
-
-            Column::make('Total', 'total_harga')
+            Column::make('Tanggal Transaksi', 'tanggal_transaksi')
                 ->sortable()
-                ->format(fn($v) => 'Rp '.number_format($v,0,',','.')),
+                ->searchable(),
 
-            Column::make('Bayar', 'metode_pembayaran')
-                ->sortable()->searchable(),
+            Column::make('Total Harga', 'total_harga')
+                ->sortable()
+                ->format(fn($value) => 'Rp ' . number_format($value, 0, ',', '.')),
 
-            // hanya render dropdown jika transaksi punya jasa (atau type=mix & ada jasa)
+            Column::make('Metode Pembayaran', 'metode_pembayaran')
+                ->sortable()
+                ->searchable(),
+
+            // Inline-editable Status Service with Livewire action
             Column::make('Status Service')
                 ->html()
-                ->format(function($_, Transaksi $row) {
-                    $hasJasa = count($row->jasaModels()) > 0;
+                ->format(fn($_, $row) =>
+                    "<select
+                        wire:change=\"updateStatus({$row->id_transaksi}, \$event.target.value)\"
+                        class=\"border rounded px-4 py-1 px-2 bg-white\">
+                        <option value=\"proses\" " . ($row->status_service === 'proses' ? 'selected' : '') . ">Proses</option>
+                        <option value=\"selesai\" " . ($row->status_service === 'selesai' ? 'selected' : '') . ">Selesai</option>
+                        <option value=\"diambil\" " . ($row->status_service === 'diambil' ? 'selected' : '') . ">Diambil</option>
+                     </select>"
+                ),
 
-                    if (! $hasJasa) {
-                        return '<span class="text-gray-500">–</span>';
-                    }
-
-                    $opts = ['proses'=>'Proses','selesai'=>'Selesai','diambil'=>'Diambil'];
-                    $sel  = fn($v)=> $row->status_service===$v ? 'selected' : '';
-
-                    $html = '<select wire:change="updateStatus('.$row->id_transaksi.', $event.target.value)"'
-                          . ' class="border rounded px-2 py-1 bg-white">';
-                    foreach ($opts as $val=>$label) {
-                        $html .= "<option value=\"{$val}\" {$sel($val)}>{$label}</option>";
-                    }
-                    return $html . '</select>';
-                }),
-
-            Column::make('Estimasi', 'estimasi_pengerjaan')
-                ->sortable()->searchable(),
+            Column::make('Estimasi Pengerjaan', 'estimasi_pengerjaan')
+                ->sortable()
+                ->searchable(),
 
             Column::make('Teknisi', 'teknisi.nama_teknisi')
-                ->sortable(fn($q,$dir)=>
-                    $q->leftJoin('teknisis','transaksis.id_teknisi','=','teknisis.id_teknisi')
-                      ->orderBy('teknisis.nama_teknisi',$dir)
+                ->sortable(fn($query, $direction) =>
+                    $query->leftJoin('teknisis', 'transaksis.id_teknisi', '=', 'teknisis.id_teknisi')
+                          ->orderBy('teknisis.nama_teknisi', $direction)
                 )
                 ->searchable(),
 
-            LinkColumn::make('Aksi')
-                ->title(fn($row)=>'Detail')
-                ->location(fn($row)=>route('transaksi.show',$row->id_transaksi)),
-        ];
+                LinkColumn::make('Action')
+        ->title(fn($row) => 'Detail')
+        ->location(fn($row) => route('transaksi.show', $row->id_transaksi)),
+            ];
     }
 }
