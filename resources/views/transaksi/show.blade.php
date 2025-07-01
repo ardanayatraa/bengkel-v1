@@ -62,12 +62,19 @@
                             @endif
                         </div>
 
-                        <div>
-                            <label class="block text-sm font-medium text-gray-600">Jasa</label>
-                            <p class="mt-1 text-gray-800">
-                                {{ optional($transaksi->jasa)->nama_jasa ?? '–' }}
-                            </p>
-                        </div>
+                       <div>
+                        <label class="block text-sm font-medium text-gray-600">Jasa</label>
+                        @if ($jasas->count())
+                            <ul class="mt-1 text-gray-800 list-disc list-inside">
+                                @foreach ($jasas as $jasa)
+                                    <li>{{ $jasa->nama_jasa }}</li>
+                                @endforeach
+                            </ul>
+                        @else
+                            <p class="mt-1 text-gray-800">–</p>
+                        @endif
+                    </div>
+
 
                         <div>
                             <label class="block text-sm font-medium text-gray-600">Total Harga</label>
