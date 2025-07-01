@@ -65,31 +65,34 @@ class TransaksiTable extends DataTableComponent
                 ->searchable(),
 
             // Hanya tampilkan dropdown jika ada jasa, jika tidak tampilkan '-'
-            Column::make('Status Service')
-                ->html()
-                ->format(function($_, $row) {
-                    // $row->id_jasa di-cast ke array oleh Model
-                    $jasaCount = is_array($row->id_jasa) ? count($row->id_jasa) : 0;
+           // di dalam columns(): array
+                Column::make('Status Service')
+                    ->html()
+                    ->format(function($_, Transaksi $row) {
+                        // hitung jasa via relasi model
+                        $hasJasa = $row->jasaModels()->isNotEmpty();
 
-                    if ($jasaCount === 0) {
-                        return '<span class="text-gray-500">-</span>';
-                    }
+                        if (! $hasJasa) {
+                            return '<span class="text-gray-500">–</span>';
+                        }
 
-                    $opts = [
-                        'proses'  => 'Proses',
-                        'selesai' => 'Selesai',
-                        'diambil' => 'Diambil',
-                    ];
+                        $opts = [
+                            'proses'  => 'Proses',
+                            'selesai' => 'Selesai',
+                            'diambil' => 'Diambil',
+                        ];
 
-                    $html = '<select wire:change="updateStatus('.$row->id_transaksi.', $event.target.value)" class="border rounded px-2 py-1 bg-white">';
-                    foreach ($opts as $value => $label) {
-                        $sel = $row->status_service === $value ? ' selected' : '';
-                        $html .= "<option value=\"{$value}\"{$sel}>{$label}</option>";
-                    }
-                    $html .= '</select>';
+                        $html  = '<select wire:change="updateStatus('.$row->id_transaksi.', $event.target.value)"';
+                        $html .= ' class="border rounded px-2 py-1 bg-white">';
+                        foreach ($opts as $value => $label) {
+                            $sel = $row->status_service === $value ? ' selected' : '';
+                            $html .= "<option value=\"{$value}\"{$sel}>{$label}</option>";
+                        }
+                        $html .= '</select>';
 
-                    return $html;
-                }),
+                        return $html;
+                    }),
+
 
 
             Column::make('Estimasi Pengerjaan', 'estimasi_pengerjaan')
