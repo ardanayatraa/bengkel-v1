@@ -10,7 +10,15 @@
             </a>
         </div>
         <div class="border p-4 md:p-6">
-            @livewire('table.transaksi-table')
+         {{-- Tampilkan hanya transaksi barang --}}
+@livewire('table.transaksi-table',['type'=>'barang'])
+
+{{-- Tampilkan hanya transaksi jasa --}}
+@livewire('table.transaksi-table',['type'=>'jasa'])
+
+{{-- Tampilkan keduanya (default) --}}
+@livewire('table.transaksi-table',['type'=>'mix'])
+
         </div>
     </div>
 </x-app-layout>
