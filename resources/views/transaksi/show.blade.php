@@ -51,16 +51,24 @@
                     <div class="space-y-4">
                         <div>
                             <label class="block text-sm font-medium text-gray-600">Barang</label>
-                            <p class="mt-1 text-gray-800">
-                                {{ optional($transaksi->barang)->nama_barang ?? '–' }}
-                            </p>
+                            @if ($barangs->count())
+                                <ul class="mt-1 text-gray-800 list-disc list-inside">
+                                    @foreach ($barangs as $barang)
+                                        <li>{{ $barang->nama_barang }}</li>
+                                    @endforeach
+                                </ul>
+                            @else
+                                <p class="mt-1 text-gray-800">–</p>
+                            @endif
                         </div>
+
                         <div>
                             <label class="block text-sm font-medium text-gray-600">Jasa</label>
                             <p class="mt-1 text-gray-800">
                                 {{ optional($transaksi->jasa)->nama_jasa ?? '–' }}
                             </p>
                         </div>
+
                         <div>
                             <label class="block text-sm font-medium text-gray-600">Total Harga</label>
                             <p class="mt-1 text-gray-800 text-lg font-semibold">

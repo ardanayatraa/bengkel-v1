@@ -158,10 +158,16 @@ class TransaksiController extends Controller
     }
 
     public function show($id)
-    {
-        $transaksi = Transaksi::with(['konsumen','teknisi','points'])->findOrFail($id);
-        return view('transaksi.show', compact('transaksi'));
-    }
+{
+    $transaksi = Transaksi::with(['konsumen', 'teknisi', 'points'])->findOrFail($id);
+    
+    // Ambil model Barang & Jasa dari array ID yang disimpan
+    $barangs = $transaksi->barangModels();
+    $jasas   = $transaksi->jasaModels();
+
+    return view('transaksi.show', compact('transaksi', 'barangs', 'jasas'));
+}
+
 
     public function print($id)
     {
