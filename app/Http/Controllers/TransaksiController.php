@@ -10,8 +10,6 @@ use App\Models\Jasa;
 use App\Models\Point;
 use Illuminate\Support\Facades\Auth;
 use Barryvdh\DomPDF\Facade\Pdf;
-use Carbon\Carbon;
-use Illuminate\Support\Facades\DB;
 
 class TransaksiController extends Controller
 {
@@ -50,67 +48,59 @@ class TransaksiController extends Controller
             'redeem_points'       => 'nullable|integer|min:0',
         ]);
 
-        $k = Konsumen::findOrFail($v['id_konsumen']);
-        $redeem = $v['redeem_points'] ?? 0;
-
-        // validasi poin: kelipatan 10 & tidak lebih dari saldo
-        if ($redeem % 10 !== 0 || $redeem > $k->jumlah_point) {
+        if (!empty($v['id_jasa']) && empty(trim($v['estimasi_pengerjaan']))) {
             return back()->withInput()
                          ->withErrors(['redeem_points'=>'Poin tukar harus kelipatan 10 dan tidak melebihi saldo.']);
         }
 
-        // build array barang→qty
+        $k = Konsumen::findOrFail($v['id_konsumen']);
+
+        // Build JSON barang=>qty
         $barangJson = [];
         foreach ($v['id_barang'] ?? [] as $id) {
             $barangJson[$id] = $v['qty_barang'][$id] ?? 1;
         }
 
-        // hitung subtotal barang
-        $totalBarang = collect($barangJson)
-            ->map(fn($qty,$id)=> Barang::find($id)->harga_jual * $qty)
-            ->sum();
+        // Hitung total harga barang
+        $totalBarang = 0;
+        foreach ($barangJson as $id=>$qty) {
+            $totalBarang += Barang::find($id)->harga_jual * $qty;
+        }
 
         // hitung subtotal jasa
         $totalJasa = collect($v['id_jasa'] ?? [])
-            ->map(fn($jid)=> Jasa::find($jid)->harga_jasa)
+            ->map(fn($i)=> Jasa::find($i)->harga_jasa)
             ->sum();
 
         $subtotal = $totalBarang + $totalJasa;
 
-        // diskon dari poin yang ditukar
-        $pointDiscount = ($redeem / 10) * 10000;
-        $totalAkhir    = $subtotal - $pointDiscount;
-
-        // validasi pembayaran cukup
-        if ($v['uang_diterima'] < $totalAkhir) {
-            return back()->withInput()
-                         ->withErrors(['uang_diterima'=>"Uang diterima minimal Rp ".number_format($totalAkhir,0,',','.')."."]);
+        // Diskon member
+        if (strtolower($k->keterangan) === 'member' && $k->jumlah_point >= 10) {
+            $total -= 10000;
+            $k->decrement('jumlah_point', 10);
         }
 
-        DB::transaction(function() use($v, $k, $barangJson, $totalAkhir, $redeem) {
-            // simpan Transaksi
-            $t = Transaksi::create([
-                'id_konsumen'         => $k->id_konsumen,
-                'id_teknisi'          => $v['id_teknisi'] ?? null,
-                'id_barang'           => $barangJson,
-                'id_jasa'             => $v['id_jasa'] ?? [],
-                'tanggal_transaksi'   => $v['tanggal_transaksi'],
-                'metode_pembayaran'   => $v['metode_pembayaran'],
-                'status_service'      => $v['status_service'],
-                'estimasi_pengerjaan' => $v['estimasi_pengerjaan'] ?? null,
-                'total_harga'         => $totalAkhir,
-                'uang_diterima'       => $v['uang_diterima'],
-                'id_user'             => Auth::id(),
+        $t = Transaksi::create([
+            'id_konsumen'         => $v['id_konsumen'],
+            'id_teknisi'          => $v['id_teknisi'] ?? null,
+            'id_barang'           => $barangJson,
+            'id_jasa'             => $v['id_jasa'] ?? [],
+            'tanggal_transaksi'   => $v['tanggal_transaksi'],
+            'metode_pembayaran'   => $v['metode_pembayaran'],
+            'status_service'      => $v['status_service'],
+            'estimasi_pengerjaan' => $v['estimasi_pengerjaan'] ?? null,
+            'total_harga'         => $total,
+            'id_user'             => Auth::id(),
+        ]);
+
+        if (strtolower($k->keterangan) === 'member' && !empty($v['id_jasa'])) {
+            Point::create([
+                'id_konsumen'  => $k->id_konsumen,
+                'id_transaksi' => $t->id_transaksi,
+                'tanggal'      => now()->toDateString(),
+                'jumlah_point' => 1,
             ]);
-
-            // kurangi poin di Konsumen & buat log negatif
-            if ($redeem > 0) {
-                $k->decrement('jumlah_point', $redeem);
-
-            }
-
-
-        });
+        }
 
         return redirect()->route('transaksi.index')
                          ->with('success','Transaksi berhasil disimpan.');
@@ -129,6 +119,7 @@ class TransaksiController extends Controller
     public function update(Request $request, $id)
     {
         $v = $request->validate([
+            // sama seperti store, tanpa pengurangan poin
             'id_konsumen'         => 'required|exists:konsumens,id_konsumen',
             'id_teknisi'          => 'nullable|exists:teknisis,id_teknisi',
             'id_barang'           => 'nullable|array',
@@ -144,66 +135,43 @@ class TransaksiController extends Controller
             'redeem_points'       => 'nullable|integer|min:0',
         ]);
 
-        $k = Konsumen::findOrFail($v['id_konsumen']);
-        $redeem = $v['redeem_points'] ?? 0;
-        if ($redeem % 10 !== 0 || $redeem > $k->jumlah_point) {
+        if (!empty($v['id_jasa']) && empty(trim($v['estimasi_pengerjaan']))) {
             return back()->withInput()
                          ->withErrors(['redeem_points'=>'Poin tukar harus kelipatan 10 dan tidak melebihi saldo.']);
         }
 
-        // hitung ulang subtotal
+        $k = Konsumen::findOrFail($v['id_konsumen']);
+
+        // Rebuild JSON barang=>qty & hitung total sama seperti di store
         $barangJson = [];
         foreach ($v['id_barang'] ?? [] as $id) {
             $barangJson[$id] = $v['qty_barang'][$id] ?? 1;
         }
-        $totalBarang = collect($barangJson)
-            ->map(fn($qty,$id)=> Barang::find($id)->harga_jual * $qty)
-            ->sum();
+        $totalBarang = array_reduce(array_keys($barangJson), function($sum,$id) use($barangJson){
+            return $sum + Barang::find($id)->harga_jual * $barangJson[$id];
+        }, 0);
         $totalJasa = collect($v['id_jasa'] ?? [])
-            ->map(fn($jid)=> Jasa::find($jid)->harga_jasa)
+            ->map(fn($i)=> Jasa::find($i)->harga_jasa)
             ->sum();
-        $subtotal = $totalBarang + $totalJasa;
-        $pointDiscount = ($redeem / 10) * 10000;
-        $totalAkhir = $subtotal - $pointDiscount;
-
-        if ($v['uang_diterima'] < $totalAkhir) {
-            return back()->withInput()
-                         ->withErrors(['uang_diterima'=>"Uang diterima minimal Rp ".number_format($totalAkhir,0,',','.')."."]);
+        $total = $totalBarang + $totalJasa;
+        if (strtolower($k->keterangan) === 'member' && $k->jumlah_point >= 10) {
+            $total -= 10000;
         }
+        $totalAkhir = $subtotal - $diskon;
 
-        DB::transaction(function() use($v, $k, $barangJson, $totalAkhir, $redeem, $id) {
-            $tr = Transaksi::findOrFail($id);
-            $tr->update([
-                'id_konsumen'         => $k->id_konsumen,
-                'id_teknisi'          => $v['id_teknisi'] ?? null,
-                'id_barang'           => $barangJson,
-                'id_jasa'             => $v['id_jasa'] ?? [],
-                'tanggal_transaksi'   => $v['tanggal_transaksi'],
-                'metode_pembayaran'   => $v['metode_pembayaran'],
-                'status_service'      => $v['status_service'],
-                'estimasi_pengerjaan' => $v['estimasi_pengerjaan'] ?? null,
-                'total_harga'         => $totalAkhir,
-                'uang_diterima'       => $v['uang_diterima'],
-            ]);
+        $t = Transaksi::findOrFail($id);
+        $t->update([
+            'id_konsumen'         => $v['id_konsumen'],
+            'id_teknisi'          => $v['id_teknisi'] ?? null,
+            'id_barang'           => $barangJson,
+            'id_jasa'             => $v['id_jasa'] ?? [],
+            'tanggal_transaksi'   => $v['tanggal_transaksi'],
+            'metode_pembayaran'   => $v['metode_pembayaran'],
+            'status_service'      => $v['status_service'],
+            'estimasi_pengerjaan' => $v['estimasi_pengerjaan'] ?? null,
+            'total_harga'         => $total,
+        ]);
 
-            // hapus log poin negatif lama untuk transaksi ini, lalu buat baru
-            $k->points()
-              ->where('id_transaksi', $id)
-              ->where('jumlah_point','<',0)
-              ->delete();
-
-            if ($redeem > 0) {
-                $k->decrement('jumlah_point', $redeem);
-                $k->points()->create([
-                    'id_transaksi' => $id,
-                    'tanggal'      => Carbon::now()->toDateString(),
-                    'jumlah_point' => -$redeem,
-                ]);
-            }
-
-            // untuk reward jasa, Anda bisa sesuaikan: hapus dulu atau tambahkan jika belum ada
-            // …
-        });
         return redirect()->route('transaksi.index')
                          ->with('success','Transaksi berhasil diperbarui.');
     }
@@ -232,28 +200,8 @@ class TransaksiController extends Controller
                                ->findOrFail($id);
         $barangs   = $transaksi->barangWithQty();
         $jasas     = $transaksi->jasaModels();
-        $subtotal  = $barangs->sum('subtotal') + collect($jasas)->sum(fn($j)=>$j->harga_jasa);
-        $diskon    = $transaksi->point_discount;
-        $kembalian = $transaksi->uang_diterima - $transaksi->total_harga;
-        $sisaPoint = $transaksi->konsumen->jumlah_point;
-
-        $wPt = 80   * 2.83465;
-        $lineCount = 6 + $barangs->count() + $jasas->count() + 6;
-        $heightMm  = 8 + ($lineCount * 8);
-        $hPt       = $heightMm * 2.83465;
-
-        $pdf = Pdf::loadView('transaksi.print', compact(
-            'transaksi','barangs','jasas',
-            'subtotal','diskon','kembalian','sisaPoint'
-        ))->setPaper([0,0,$wPt,$hPt]);
-
-        return $pdf->download("nota_{$transaksi->id_transaksi}.pdf");
-    }
-
-    public function destroy($id)
-    {
-        Transaksi::findOrFail($id)->delete();
-        return redirect()->route('transaksi.index')
-                         ->with('success','Transaksi berhasil dihapus.');
+        $pdf = Pdf::loadView('transaksi.print', compact('transaksi','barangs','jasas'))
+                  ->setPaper('a4','portrait');
+        return $pdf->download("transaksi_{$transaksi->id_transaksi}.pdf");
     }
 }
