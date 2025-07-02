@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>Ringkasan Stok Barang {{ $start }}–{{ $end }}</title>
+    <title>Laporan Penjualan Barang {{ $start }}–{{ $end }}</title>
     <style>
         body {
             font-family: sans-serif;
@@ -38,11 +38,11 @@
         }
 
         th {
-            background: #f3f4f6;
+            background: #eee;
         }
 
         tfoot td {
-            background: #f9fafb;
+            background: #f5f5f5;
             font-weight: bold;
             border-top: 2px solid #999;
         }
@@ -51,10 +51,9 @@
             page-break-after: always;
         }
 
-        .kop-table {
-            width: 100%;
-            border-collapse: collapse;
+        .kop {
             margin-bottom: 12px;
+            width: 100%;
         }
 
         .kop-logo {
@@ -63,8 +62,6 @@
 
         .kop-info {
             text-align: right;
-            padding-left: 8px;
-            line-height: 1.2;
         }
 
         .store-name {
@@ -80,17 +77,17 @@
 
 <body>
     @php
-        $logoPath = public_path('assets/img/logo.png');
-        $logoData = file_exists($logoPath) ? base64_encode(file_get_contents($logoPath)) : null;
-        $logoMime = $logoData ? mime_content_type($logoPath) : '';
-        $chunks = $stockSummary->chunk(25);
+        $logo = public_path('assets/img/logo.png');
+        $logoData = file_exists($logo) ? base64_encode(file_get_contents($logo)) : null;
+        $mime = $logoData ? mime_content_type($logo) : '';
+        $chunks = $transaksis->chunk(25);
     @endphp
 
-    <table class="kop-table">
+    <table class="kop">
         <tr>
             <td class="kop-logo">
                 @if ($logoData)
-                    <img src="data:{{ $logoMime }};base64,{{ $logoData }}" style="height:60px;">
+                    <img src="data:{{ $mime }};base64,{{ $logoData }}" style="height:60px;">
                 @endif
             </td>
             <td class="kop-info">
@@ -103,7 +100,7 @@
     </table>
 
     @foreach ($chunks as $i => $page)
-        <h2>Ringkasan Stok Barang</h2>
+        <h2>Laporan Penjualan Barang</h2>
         <div class="periode">
             Periode: {{ \Carbon\Carbon::parse($start)->format('d/m/Y') }}
             – {{ \Carbon\Carbon::parse($end)->format('d/m/Y') }}
@@ -113,32 +110,41 @@
         <table>
             <thead>
                 <tr>
-                    <th>Barang</th>
-                    <th>Stok Awal</th>
-                    <th>Masuk</th>
-                    <th>Keluar</th>
-                    <th>Stok Akhir</th>
+                    <th>ID</th>
+                    <th>Kasir</th>
+                    <th>Pelanggan</th>
+                    <th>No Polisi</th>
+                    <th>Barang (qty & subtotal)</th>
+                    <th>Tanggal</th>
+                    <th>Total</th>
+                    <th>Metode Bayar</th>
                 </tr>
             </thead>
             <tbody>
-                @foreach ($page as $s)
+                @foreach ($page as $trx)
                     <tr>
-                        <td>{{ $s->barang->nama_barang }}</td>
-                        <td>{{ $s->stok_awal }}</td>
-                        <td>{{ $s->masuk }}</td>
-                        <td>{{ $s->keluar }}</td>
-                        <td>{{ $s->stok_akhir }}</td>
+                        <td>{{ $trx->id_transaksi }}</td>
+                        <td>{{ $trx->kasir->nama_user ?? '-' }}</td>
+                        <td>{{ $trx->konsumen->nama_konsumen ?? '-' }}</td>
+                        <td>{{ $trx->konsumen->no_kendaraan ?? '-' }}</td>
+                        <td>
+                            @foreach ($trx->barangWithQty() as $b)
+                                {{ $b->model->nama_barang }}×{{ $b->qty }} = Rp
+                                {{ number_format($b->subtotal, 0, ',', '.') }}<br>
+                            @endforeach
+                        </td>
+                        <td>{{ \Carbon\Carbon::parse($trx->tanggal_transaksi)->format('d/m/Y') }}</td>
+                        <td>Rp {{ number_format($trx->calculated_total, 0, ',', '.') }}</td>
+                        <td>{{ ucfirst($trx->metode_pembayaran) }}</td>
                     </tr>
                 @endforeach
             </tbody>
             @if ($i + 1 === $chunks->count())
                 <tfoot>
                     <tr>
-                        <td style="text-align:right;">TOTAL:</td>
-                        <td>{{ $totalStokAwal }}</td>
-                        <td>{{ $totalMasuk }}</td>
-                        <td>{{ $totalKeluar }}</td>
-                        <td>{{ $totalStokAkhir }}</td>
+                        <td colspan="6" style="text-align:right;">Total (terfilter):</td>
+                        <td>Rp {{ number_format($totalFiltered, 0, ',', '.') }}</td>
+                        <td></td>
                     </tr>
                 </tfoot>
             @endif

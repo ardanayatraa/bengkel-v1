@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>Laporan Penjualan</title>
+    <title>Laporan Penjualan {{ $start }} – {{ $end }}</title>
     <style>
         body {
             font-family: sans-serif;
@@ -11,84 +11,124 @@
             margin: 20px;
         }
 
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
+        h2 {
+            text-align: center;
+            margin: 8px 0 4px;
+            font-size: 14px;
         }
 
-        th,
-        td {
+        .periode,
+        .pencarian {
+            text-align: center;
+            font-size: 11px;
+            margin-bottom: 8px;
+        }
+
+        table.data {
+            width: 100%;
+            border-collapse: collapse;
+            page-break-inside: avoid;
+            margin-bottom: 4px;
+        }
+
+        table.data th,
+        table.data td {
             border: 1px solid #ccc;
             padding: 6px;
+            font-size: 11px;
             text-align: left;
         }
 
-        th {
-            background-color: #f3f4f6;
+        table.data th {
+            background: #f3f4f6;
         }
 
-        h2 {
-            text-align: center;
-            margin-bottom: 0;
-        }
-
-        .periode {
-            text-align: center;
-            font-size: 11px;
-            margin-top: 4px;
-        }
-
-        .total {
-            margin-top: 10px;
-            text-align: right;
+        table.data tfoot td {
+            background: #f9fafb;
             font-weight: bold;
+            border-top: 2px solid #999;
         }
 
         .page-break {
             page-break-after: always;
         }
 
-        .badge {
-            display: inline-block;
-            padding: 2px 6px;
-            margin: 1px;
-            font-size: 10px;
-            border-radius: 4px;
-            background-color: #e2e8f0;
+        .kop-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 12px;
         }
 
-        .badge-barang {
-            background-color: #bfdbfe;
+        .kop-table td {
+            vertical-align: middle;
+            padding: 0;
         }
 
-        .badge-jasa {
-            background-color: #bbf7d0;
+        .kop-logo {
+            width: 70px;
+        }
+
+        .kop-info {
+            text-align: right;
+            padding-left: 8px;
+            line-height: 1.2;
+        }
+
+        .store-name {
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        .store-address {
+            font-size: 11px;
         }
     </style>
 </head>
 
 <body>
-
     @php
+        $logoPath = public_path('assets/img/logo.png');
+        $logoData = file_exists($logoPath) ? base64_encode(file_get_contents($logoPath)) : null;
+        $logoMime = $logoData ? mime_content_type($logoPath) : '';
         $chunks = $transaksis->chunk(25);
-        $totalHarga = $transaksis->sum('total_harga');
     @endphp
 
-    @foreach ($chunks as $index => $chunk)
+    {{-- Kop tanpa border --}}
+    <table class="kop-table">
+        <tr>
+            <td class="kop-logo">
+                @if ($logoData)
+                    <img src="data:{{ $logoMime }};base64,{{ $logoData }}" alt="Logo"
+                        style="height:60px; display:block;">
+                @endif
+            </td>
+            <td class="kop-info">
+                <div class="store-name">Ari Shockbreaker Motor</div>
+                <div class="store-address">
+                    Jl. Mahendradata, Bitera, Kec. Gianyar,<br>
+                    Kab. Gianyar, Bali 80515
+                </div>
+            </td>
+        </tr>
+    </table>
+
+    @foreach ($chunks as $i => $chunk)
         <h2>Laporan Penjualan</h2>
         <div class="periode">
             Periode: {{ \Carbon\Carbon::parse($start)->format('d/m/Y') }}
-            - {{ \Carbon\Carbon::parse($end)->format('d/m/Y') }}
-            &mdash; Halaman {{ $index + 1 }}
+            – {{ \Carbon\Carbon::parse($end)->format('d/m/Y') }}
+            &mdash; Halaman {{ $i + 1 }}/{{ $chunks->count() }}
         </div>
+        @if ($search)
+            <div class="pencarian">Pencarian: “{{ $search }}”</div>
+        @endif
 
-        <table>
+        <table class="data">
             <thead>
                 <tr>
-                    <th>ID Transaksi</th>
-                    <th>Nama Konsumen</th>
-                    <th>Nama Produk</th>
+                    <th>ID</th>
+                    <th>Konsumen</th>
+                    <th>Produk/Jasa</th>
                     <th>Tipe</th>
                     <th>Tanggal</th>
                     <th>Total Harga</th>
@@ -100,45 +140,55 @@
                     @php
                         $barangs = $trx->barangModels();
                         $jasas = $trx->jasaModels();
-                        if ($barangs->isNotEmpty() && $jasas->isNotEmpty()) {
-                            $typeLabel = 'Barang & Jasa';
-                        } elseif ($barangs->isNotEmpty()) {
-                            $typeLabel = 'Barang';
-                        } elseif ($jasas->isNotEmpty()) {
-                            $typeLabel = 'Jasa';
-                        } else {
-                            $typeLabel = '-';
-                        }
+                        $type =
+                            $barangs->isNotEmpty() && $jasas->isNotEmpty()
+                                ? 'Barang & Jasa'
+                                : ($barangs->isNotEmpty()
+                                    ? 'Barang'
+                                    : ($jasas->isNotEmpty()
+                                        ? 'Jasa'
+                                        : '-'));
                     @endphp
                     <tr>
                         <td>{{ $trx->id_transaksi }}</td>
                         <td>{{ $trx->konsumen->nama_konsumen ?? '-' }}</td>
                         <td>
                             @foreach ($barangs as $b)
-                                <span class="badge badge-barang">{{ $b->nama_barang }}</span>
+                                {{ $b->nama_barang }}@if (!$loop->last)
+                                    ,
+                                @endif
                             @endforeach
+                            @if ($barangs->isNotEmpty() && $jasas->isNotEmpty())
+                                ,
+                            @endif
                             @foreach ($jasas as $j)
-                                <span class="badge badge-jasa">{{ $j->nama_jasa }}</span>
+                                {{ $j->nama_jasa }}@if (!$loop->last)
+                                    ,
+                                @endif
                             @endforeach
                         </td>
-                        <td>{{ $typeLabel }}</td>
+                        <td>{{ $type }}</td>
                         <td>{{ \Carbon\Carbon::parse($trx->tanggal_transaksi)->format('d/m/Y') }}</td>
                         <td>Rp {{ number_format($trx->total_harga, 0, ',', '.') }}</td>
-                        <td>{{ $trx->metode_pembayaran ?? '-' }}</td>
+                        <td>{{ ucfirst($trx->metode_pembayaran) }}</td>
                     </tr>
                 @endforeach
             </tbody>
+            @if ($i + 1 === $chunks->count())
+                <tfoot>
+                    <tr>
+                        <td colspan="5" style="text-align:right;">Total Terfilter:</td>
+                        <td>Rp {{ number_format($totalFiltered, 0, ',', '.') }}</td>
+                        <td></td>
+                    </tr>
+                </tfoot>
+            @endif
         </table>
 
-        @if ($loop->last)
-            <div class="total">
-                Total Harga: Rp {{ number_format($totalHarga, 0, ',', '.') }}
-            </div>
-        @else
+        @if ($i + 1 < $chunks->count())
             <div class="page-break"></div>
         @endif
     @endforeach
-
 </body>
 
 </html>

@@ -4,74 +4,101 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Transaksi;
+use App\Models\User;
+use App\Models\Teknisi;
 use Barryvdh\DomPDF\Facade\Pdf;
-use Carbon\Carbon;
 
 class LaporanJasaController extends Controller
 {
-    /**
-     * Tampilkan halaman laporan jasa dengan filter tanggal dan pencarian.
-     */
     public function index(Request $request)
     {
-        $start  = $request->input('start_date');
-        $end    = $request->input('end_date');
-        $search = $request->input('search');
+        $user      = auth()->user();
+        $isAdmin   = $user->level === 'admin';
 
-        $query = Transaksi::with('konsumen')
-            ->whereJsonLength('id_jasa', '>', 0);
+        $start      = $request->input('start_date');
+        $end        = $request->input('end_date');
+        $search     = $request->input('search');
+        $kasirId    = $request->input('kasir_id');
+        $teknisiId  = $request->input('teknisi_id');
 
-        if ($start) {
-            $query->whereDate('tanggal_transaksi', '>=', $start);
+        // Dropdown data
+        $kasirs    = $isAdmin ? User::where('level','kasir')->orderBy('nama_user')->get() : collect();
+        $teknisis  = Teknisi::orderBy('nama_teknisi')->get();
+
+        // Base query: transaksi jasa
+        $base = Transaksi::with(['konsumen','kasir','teknisi'])
+            ->whereJsonLength('id_jasa','>',0);
+
+        // Non-admin see only their own transactions
+        if (! $isAdmin) {
+            $base->where('id_user', $user->id_user);
         }
 
-        if ($end) {
-            $query->whereDate('tanggal_transaksi', '<=', $end);
-        }
+        // Total tanpa filter
+        $totalAll = $base->get()
+            ->sum(fn($trx) => $trx->jasaModels()->sum('harga_jasa'));
 
-        if ($search) {
-            $query->whereHas('konsumen', function ($q) use ($search) {
-                $q->where('nama_konsumen', 'like', "%{$search}%")
-                  ->orWhere('no_kendaraan', 'like', "%{$search}%");
-            });
-        }
+        // Terapkan filter
+        $filtered = clone $base;
+        if ($start)      $filtered->whereDate('tanggal_transaksi','>=',$start);
+        if ($end)        $filtered->whereDate('tanggal_transaksi','<=',$end);
+        if ($search)     $filtered->whereHas('konsumen', fn($q)=>
+                              $q->where('nama_konsumen','like',"%{$search}%")
+                                ->orWhere('no_kendaraan','like',"%{$search}%"));
+        if ($isAdmin && $kasirId)   $filtered->where('id_user',    $kasirId);
+        if ($teknisiId)             $filtered->where('id_teknisi', $teknisiId);
 
-        $transaksis = $query
+        // Total setelah filter
+        $totalFiltered = $filtered->get()
+            ->sum(fn($trx) => $trx->jasaModels()->sum('harga_jasa'));
+
+        // Paginate & preserve filters
+        $transaksis = $filtered
             ->orderByDesc('tanggal_transaksi')
             ->paginate(10)
-            ->appends(compact('start','end','search'));
+            ->appends(compact('start','end','search','kasirId','teknisiId'));
 
-        return view('laporan.jasa.index', compact('transaksis','start','end','search'));
+        return view('laporan.jasa.index', compact(
+            'transaksis','start','end','search',
+            'kasirs','teknisis','kasirId','teknisiId',
+            'totalAll','totalFiltered','isAdmin'
+        ));
     }
 
-    /**
-     * Export PDF laporan jasa sesuai filter.
-     */
     public function exportPdf(Request $request)
     {
-        $start  = $request->input('start_date', Carbon::today()->toDateString());
-        $end    = $request->input('end_date',   Carbon::today()->toDateString());
-        $search = $request->input('search');
+        $user      = auth()->user();
+        $isAdmin   = $user->level === 'admin';
 
-        $query = Transaksi::with('konsumen')
-            ->whereJsonLength('id_jasa', '>', 0)
-            ->whereDate('tanggal_transaksi', '>=', $start)
-            ->whereDate('tanggal_transaksi', '<=', $end);
+        $start      = $request->input('start_date');
+        $end        = $request->input('end_date');
+        $search     = $request->input('search');
+        $kasirId    = $request->input('kasir_id');
+        $teknisiId  = $request->input('teknisi_id');
 
-        if ($search) {
-            $query->whereHas('konsumen', function ($q) use ($search) {
-                $q->where('nama_konsumen', 'like', "%{$search}%")
-                  ->orWhere('no_kendaraan', 'like', "%{$search}%");
-            });
+        $base = Transaksi::with(['konsumen','kasir','teknisi'])
+            ->whereJsonLength('id_jasa','>',0);
+
+        if (! $isAdmin) {
+            $base->where('id_user', $user->id_user);
         }
+        if ($start)      $base->whereDate('tanggal_transaksi','>=',$start);
+        if ($end)        $base->whereDate('tanggal_transaksi','<=',$end);
+        if ($search)     $base->whereHas('konsumen', fn($q)=>
+                              $q->where('nama_konsumen','like',"%{$search}%")
+                                ->orWhere('no_kendaraan','like',"%{$search}%"));
+        if ($isAdmin && $kasirId)   $base->where('id_user',    $kasirId);
+        if ($teknisiId)             $base->where('id_teknisi', $teknisiId);
 
-        $transaksis = $query
-            ->orderByDesc('tanggal_transaksi')
-            ->get();
+        $transaksis    = $base->orderByDesc('tanggal_transaksi')->get();
+        $totalFiltered = $transaksis->sum(fn($trx) => $trx->jasaModels()->sum('harga_jasa'));
 
-        $pdf = Pdf::loadView('laporan.jasa.pdf', compact('transaksis','start','end','search'))
-                  ->setPaper('a4','landscape');
+        $pdf = Pdf::loadView('laporan.jasa.pdf', compact(
+            'transaksis','start','end','search',
+            'kasirId','teknisiId','totalFiltered','isAdmin'
+        ))
+        ->setPaper('a4','landscape');
 
-        return $pdf->download("laporan-transaksi-jasa_{$start}_to_{$end}.pdf");
+        return $pdf->stream("laporan-transaksi-jasa.pdf");
     }
 }

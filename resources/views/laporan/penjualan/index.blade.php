@@ -1,128 +1,134 @@
 <x-app-layout>
     <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+
         <!-- Header: Search + Filter + Cetak -->
         <div class="flex flex-wrap justify-between gap-4 items-center mb-6">
-            <!-- Form Search Konsumen -->
             <form method="GET" action="{{ route('laporan.penjualan') }}" class="flex items-center gap-2">
-                <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari Konsumen..."
-                    class="px-4 py-2 border border-gray-300 rounded-md w-52 focus:outline-none focus:ring-2 focus:ring-gray-200">
-
-                <input type="hidden" name="start_date" value="{{ request('start_date') }}">
-                <input type="hidden" name="end_date" value="{{ request('end_date') }}">
-
+                <input type="text" name="search" value="{{ $search }}" placeholder="Cari Konsumen..."
+                    class="px-4 py-2 border rounded-md w-52 focus:ring focus:ring-gray-200">
+                <input type="hidden" name="start_date" value="{{ $start }}">
+                <input type="hidden" name="end_date" value="{{ $end }}">
                 <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
                     Search
                 </button>
             </form>
 
-            <!-- Form Filter Tanggal -->
             <form method="GET" action="{{ route('laporan.penjualan') }}" class="flex items-center gap-2">
-                <input type="hidden" name="search" value="{{ request('search') }}">
-
-                <input type="date" name="start_date" value="{{ request('start_date') }}"
-                    class="px-3 py-2 border border-gray-300 rounded-md text-sm">
-                <span class="text-gray-500">-</span>
-                <input type="date" name="end_date" value="{{ request('end_date') }}"
-                    class="px-3 py-2 border border-gray-300 rounded-md text-sm">
-
+                <input type="hidden" name="search" value="{{ $search }}">
+                <input type="date" name="start_date" value="{{ $start }}"
+                    class="px-3 py-2 border rounded-md text-sm">
+                <span class="text-gray-500">–</span>
+                <input type="date" name="end_date" value="{{ $end }}"
+                    class="px-3 py-2 border rounded-md text-sm">
                 <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700">
                     Filter
                 </button>
             </form>
 
-            <!-- Tombol Cetak PDF -->
             <a href="{{ route('laporan.penjualan.pdf', request()->only('start_date', 'end_date', 'search')) }}"
-                class="px-4 py-2 border border-gray-300 rounded-md bg-white flex items-center gap-2 text-gray-700 hover:bg-gray-100"
+                class="px-4 py-2 border rounded-md bg-white flex items-center gap-2 text-gray-700 hover:bg-gray-100"
                 target="_blank">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-600" fill="none" viewBox="0 0 24 24"
+                <!-- icon PDF -->
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
                     stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2M6 18v4h12v-4M6 14h12" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 9V2h12v7M6 18H4a2 2…" />
                 </svg>
                 Cetak PDF
             </a>
         </div>
 
+        <!-- Ringkasan Total -->
+        <div class="mb-4 text-sm text-gray-700">
+            <span class="font-medium">Total Semua:</span>
+            <span>Rp {{ number_format($totalAll, 0, ',', '.') }}</span>
+
+            @if ($start || $end || $search)
+                <span class="ml-6 font-medium">Total Terfilter:</span>
+                <span>Rp {{ number_format($totalFiltered, 0, ',', '.') }}</span>
+            @endif
+        </div>
+
         <!-- Tabel Penjualan -->
         <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200">
-                <thead>
-                    <tr class="bg-gray-50">
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase border-b">ID
-                            TRANSAKSI</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase border-b">NAMA
-                            KONSUMEN</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase border-b">NAMA PRODUK
-                        </th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase border-b">TIPE</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase border-b">TANGGAL
-                        </th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase border-b">TOTAL HARGA
-                        </th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase border-b">METODE</th>
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-xs font-medium text-gray-500 uppercase">ID</th>
+                        <th class="px-6 py-3 text-xs font-medium text-gray-500 uppercase">Konsumen</th>
+                        <th class="px-6 py-3 text-xs font-medium text-gray-500 uppercase">Produk/Jasa</th>
+                        <th class="px-6 py-3 text-xs font-medium text-gray-500 uppercase">Tipe</th>
+                        <th class="px-6 py-3 text-xs font-medium text-gray-500 uppercase">Tanggal</th>
+                        <th class="px-6 py-3 text-xs font-medium text-gray-500 uppercase">Total Harga</th>
+                        <th class="px-6 py-3 text-xs font-medium text-gray-500 uppercase">Metode</th>
                     </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
-                    @forelse ($transaksis as $trx)
+                    @forelse($transaksis as $trx)
                         @php
                             $barangs = $trx->barangModels();
                             $jasas = $trx->jasaModels();
-                            if ($barangs->isNotEmpty() && $jasas->isNotEmpty()) {
-                                $typeLabel = 'Barang & Jasa';
-                            } elseif ($barangs->isNotEmpty()) {
-                                $typeLabel = 'Barang';
-                            } elseif ($jasas->isNotEmpty()) {
-                                $typeLabel = 'Jasa';
-                            } else {
-                                $typeLabel = '-';
-                            }
+                            $type =
+                                $barangs->isNotEmpty() && $jasas->isNotEmpty()
+                                    ? 'Barang & Jasa'
+                                    : ($barangs->isNotEmpty()
+                                        ? 'Barang'
+                                        : ($jasas->isNotEmpty()
+                                            ? 'Jasa'
+                                            : '-'));
                         @endphp
                         <tr class="hover:bg-gray-50">
                             <td class="px-6 py-2">{{ $trx->id_transaksi }}</td>
-                            <td class="px-6 py-2">{{ $trx->konsumen->nama_konsumen ?? '-' }}</td>
+                            <td class="px-6 py-2">{{ $trx->konsumen->nama_konsumen }}</td>
                             <td class="px-6 py-2 space-y-1">
                                 @foreach ($barangs as $b)
-                                    <div class="inline-block px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">
+                                    <span class="inline-block px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">
                                         {{ $b->nama_barang }}
-                                    </div>
+                                    </span>
                                 @endforeach
                                 @foreach ($jasas as $j)
-                                    <div
+                                    <span
                                         class="inline-block px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">
                                         {{ $j->nama_jasa }}
-                                    </div>
+                                    </span>
                                 @endforeach
                             </td>
-                            <td class="px-6 py-2">{{ $typeLabel }}</td>
-                            <td class="px-6 py-2">{{ \Carbon\Carbon::parse($trx->tanggal_transaksi)->format('d/m/Y') }}
-                            </td>
+                            <td class="px-6 py-2">{{ $type }}</td>
+                            <td class="px-6 py-2">{{ $trx->tanggal_transaksi->format('d/m/Y') }}</td>
                             <td class="px-6 py-2">Rp {{ number_format($trx->total_harga, 0, ',', '.') }}</td>
-                            <td class="px-6 py-2">{{ $trx->metode_pembayaran ?? '-' }}</td>
+                            <td class="px-6 py-2">{{ ucfirst($trx->metode_pembayaran) }}</td>
                         </tr>
                     @empty
                         <tr>
                             <td colspan="7" class="px-6 py-16 text-center text-gray-400">
-                                <p class="text-lg">Tidak ada data penjualan ditemukan.</p>
+                                Tidak ada data penjualan.
                             </td>
                         </tr>
                     @endforelse
                 </tbody>
+                @if ($transaksis->count())
+                    <tfoot class="bg-gray-50">
+                        <tr>
+                            <td colspan="5" class="px-6 py-3 text-right font-medium">Total Terfilter:</td>
+                            <td class="px-6 py-3 font-semibold">Rp {{ number_format($totalFiltered, 0, ',', '.') }}
+                            </td>
+                            <td></td>
+                        </tr>
+                    </tfoot>
+                @endif
             </table>
         </div>
 
-        <!-- Footer Info -->
-        <div class="mt-4 text-sm text-gray-600">
-            @if ($transaksis->total() > 0)
-                Menampilkan {{ $transaksis->firstItem() }} - {{ $transaksis->lastItem() }} dari total
-                {{ $transaksis->total() }} data
-            @else
-                Menampilkan 0 hasil
-            @endif
-        </div>
-
         <!-- Pagination -->
-        <div class="mt-4">
-            {{ $transaksis->withQueryString()->links() }}
+        <div class="mt-4 flex justify-between text-sm text-gray-600">
+            <div>
+                @if ($transaksis->total())
+                    Menampilkan {{ $transaksis->firstItem() }}–{{ $transaksis->lastItem() }} dari
+                    {{ $transaksis->total() }} data
+                @else
+                    Menampilkan 0 data
+                @endif
+            </div>
+            <div>{{ $transaksis->withQueryString()->links() }}</div>
         </div>
     </div>
 </x-app-layout>

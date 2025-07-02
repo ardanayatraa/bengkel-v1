@@ -1,149 +1,90 @@
+{{-- resources/views/transaksi/show.blade.php --}}
 <x-app-layout>
-    <div class="mx-auto w-full sm:px-6 lg:px-8 py-6">
-        {{-- Card Container --}}
-        <div class="bg-white shadow-md rounded-lg overflow-hidden">
-            {{-- Header --}}
-            <div class="bg-red-100 px-6 py-4 flex items-center justify-between">
-                <h2 class="text-xl font-semibold text-red-800 flex items-center gap-2">
-                    <!-- icon -->
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-red-800" fill="none" viewBox="0 0 24 24"
-                        stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M9 17v-6a2 2 0 012-2h2a2 2 0 012 2v6m-6 0h6" />
-                    </svg>
-                    Detail Transaksi
-                </h2>
-                <div class="space-x-2">
-                    <a href="{{ route('transaksi.index') }}"
-                        class="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300">
-                        Kembali
-                    </a>
-                    <a href="{{ route('transaksi.print', $transaksi->id_transaksi) }}"
-                        class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700" target="_blank">
-                        Cetak PDF
-                    </a>
+    <div class="mx-auto sm:px-6 lg:px-8 py-6">
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-lg font-semibold">Detail Transaksi #{{ $transaksi->id_transaksi }}</h2>
+            <a href="{{ route('transaksi.print', $transaksi->id_transaksi) }}"
+                class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+                Print Nota
+            </a>
+        </div>
+
+        <div class="bg-white shadow rounded-lg p-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                <div><strong>Konsumen:</strong> {{ $transaksi->konsumen->nama_konsumen }}</div>
+                <div><strong>Teknisi:</strong> {{ $transaksi->teknisi?->nama_teknisi ?? '-' }}</div>
+                <div><strong>Tanggal:</strong>
+                    {{ \Carbon\Carbon::parse($transaksi->tanggal_transaksi)->format('d-m-Y') }}</div>
+                <div><strong>Metode Bayar:</strong> {{ ucfirst($transaksi->metode_pembayaran) }}</div>
+                <div><strong>Status:</strong> {{ ucfirst($transaksi->status_service) }}</div>
+                <div><strong>Subtotal:</strong> Rp {{ number_format($subtotal, 0, ',', '.') }}</div>
+                <div><strong>Diskon:</strong> Rp {{ number_format($diskon, 0, ',', '.') }}</div>
+                <div><strong>Total Harga:</strong> Rp {{ number_format($transaksi->total_harga, 0, ',', '.') }}</div>
+                <div><strong>Uang Diterima:</strong> Rp {{ number_format($transaksi->uang_diterima, 0, ',', '.') }}
                 </div>
+                <div><strong>Kembalian:</strong> Rp {{ number_format($kembalian, 0, ',', '.') }}</div>
+                <div><strong>Sisa Poin:</strong> {{ $sisaPoint }} poin</div>
             </div>
 
-            {{-- Body --}}
-            <div class="px-6 py-8">
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                    {{-- kiri --}}
-                    <div class="space-y-4">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-600">ID Transaksi</label>
-                            <p class="mt-1 text-gray-800">#{{ $transaksi->id_transaksi }}</p>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-600">Tanggal</label>
-                            <p class="mt-1 text-gray-800">
-                                {{ \Carbon\Carbon::parse($transaksi->tanggal_transaksi)->format('d F Y') }}
-                            </p>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-600">Konsumen</label>
-                            <p class="mt-1 text-gray-800">{{ $transaksi->konsumen->nama_konsumen }}</p>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-600">Metode Pembayaran</label>
-                            <p class="mt-1 text-gray-800">{{ ucfirst($transaksi->metode_pembayaran) }}</p>
-                        </div>
-                    </div>
-
-                    {{-- kanan --}}
-                    <div class="space-y-4">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-600">Teknisi</label>
-                            <p class="mt-1 text-gray-800">
-                                {{ $transaksi->teknisi->nama_teknisi ?? '–' }}
-                            </p>
-                        </div>
-
-                        <div>
-                            <label class="block text-sm font-medium text-gray-600">Poin Diberikan</label>
-                            <p class="mt-1 text-gray-800">
-                                {{ $transaksi->points->sum('jumlah_point') }} Point
-                            </p>
-                        </div>
-                    </div>
-                </div>
-
-                {{-- Tabel Barang --}}
-                <div class="mt-8">
-                    <h3 class="text-lg font-semibold mb-2">Daftar Barang</h3>
-                    <table class="w-full border-collapse">
+            @if ($barangs->count())
+                <div class="mb-6">
+                    <h3 class="font-medium mb-2">Detail Barang</h3>
+                    <table class="w-full table-auto border-collapse mb-4">
                         <thead>
                             <tr class="bg-gray-100">
-                                <th class="border p-2 text-left">Nama Barang</th>
-                                <th class="border p-2 text-center">Qty</th>
-                                <th class="border p-2 text-right">Harga Satuan</th>
-                                <th class="border p-2 text-right">Subtotal</th>
+                                <th class="border px-4 py-2">Nama Barang</th>
+                                <th class="border px-4 py-2 text-center">Qty</th>
+                                <th class="border px-4 py-2 text-right">Harga</th>
+                                <th class="border px-4 py-2 text-right">Subtotal</th>
                             </tr>
                         </thead>
                         <tbody>
-                            @forelse($barangs as $item)
+                            @foreach ($barangs as $item)
                                 <tr>
-                                    <td class="border p-2">{{ $item->model->nama_barang }}</td>
-                                    <td class="border p-2 text-center">{{ $item->qty }}</td>
-                                    <td class="border p-2 text-right">
-                                        Rp {{ number_format($item->model->harga_jual,0,',','.') }}
+                                    <td class="border px-4 py-2">{{ $item->model->nama_barang }}</td>
+                                    <td class="border px-4 py-2 text-center">{{ $item->qty }}</td>
+                                    <td class="border px-4 py-2 text-right">
+                                        Rp {{ number_format($item->model->harga_jual, 0, ',', '.') }}
                                     </td>
-                                    <td class="border p-2 text-right">
-                                        Rp {{ number_format($item->subtotal,0,',','.') }}
+                                    <td class="border px-4 py-2 text-right">
+                                        Rp {{ number_format($item->subtotal, 0, ',', '.') }}
                                     </td>
                                 </tr>
-                            @empty
-                                <tr><td colspan="4" class="border p-2 text-center text-gray-500">Tidak ada barang</td></tr>
-                            @endforelse
+                            @endforeach
                         </tbody>
-                        <tfoot>
-                            <tr class="font-semibold">
-                                <td colspan="3" class="border p-2 text-right">Total Barang:</td>
-                                <td class="border p-2 text-right">
-                                    Rp {{ number_format($barangs->sum('subtotal'),0,',','.') }}
-                                </td>
-                            </tr>
-                        </tfoot>
                     </table>
                 </div>
+            @endif
 
-              {{-- List Jasa --}}
-<div class="mt-8">
-    <h3 class="text-lg font-semibold mb-2">Daftar Jasa</h3>
+            @if ($jasas->count())
+                <div class="mb-6">
+                    <h3 class="font-medium mb-2">Detail Jasa</h3>
+                    <table class="w-full table-auto border-collapse mb-4">
+                        <thead>
+                            <tr class="bg-gray-100">
+                                <th class="border px-4 py-2">Nama Jasa</th>
+                                <th class="border px-4 py-2 text-right">Harga</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach ($jasas as $jasa)
+                                <tr>
+                                    <td class="border px-4 py-2">{{ $jasa->nama_jasa }}</td>
+                                    <td class="border px-4 py-2 text-right">
+                                        Rp {{ number_format($jasa->harga_jasa, 0, ',', '.') }}
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            @endif
 
-    @if($jasas->count())
-        <table class="w-full border-collapse">
-            <thead>
-                <tr class="bg-gray-100">
-                    <th class="border p-2 text-left">Nama Jasa</th>
-                    <th class="border p-2 text-right">Harga Satuan</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach($jasas as $j)
-                    <tr class="hover:bg-gray-50">
-                        <td class="border p-2">{{ $j->nama_jasa }}</td>
-                        <td class="border p-2 text-right">
-                            Rp {{ number_format($j->harga_jasa, 0, ',', '.') }}
-                        </td>
-                    </tr>
-                @endforeach
-            </tbody>
-            <tfoot>
-                <tr class="font-semibold bg-gray-50">
-                    <td class="border p-2 text-right">Total Jasa:</td>
-                    <td class="border p-2 text-right">
-                        Rp {{ number_format($jasas->sum('harga_jasa'), 0, ',', '.') }}
-                    </td>
-                </tr>
-            </tfoot>
-        </table>
-    @else
-        <p class="text-gray-800">–</p>
-    @endif
-</div>
-
-
+            <div class="text-center">
+                <a href="{{ route('transaksi.index') }}"
+                    class="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700">
+                    Kembali
+                </a>
             </div>
         </div>
     </div>

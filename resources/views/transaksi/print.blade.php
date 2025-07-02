@@ -1,176 +1,262 @@
-{{-- resources/views/transaksi/print.blade.php --}}
 <!DOCTYPE html>
 <html lang="en">
 
 <head>
     <meta charset="UTF-8">
-    <title>Invoice Transaksi #{{ $transaksi->id_transaksi }}</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <title>Invoice #{{ $transaksi->id_transaksi }}</title>
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
-            font-family: Arial, sans-serif;
-            font-size: 12px;
-            color: #333;
+            font-family: 'Courier New', monospace;
+            font-size: 11px;
+            line-height: 1.2;
+            width: 80mm;
+            margin: 0 auto;
+            padding: 5mm;
+            background: #fff;
+            color: #000;
+        }
+
+        .receipt-container {
+            width: 100%;
         }
 
         .header {
             text-align: center;
-            margin-bottom: 20px;
+            margin-bottom: 10px;
+            border-bottom: 1px dashed #000;
+            padding-bottom: 8px;
         }
 
-        .header h1 {
-            margin: 0;
-            font-size: 22px;
-        }
-
-        .section {
-            margin-bottom: 20px;
-        }
-
-        .section h2 {
-            font-size: 16px;
-            margin-bottom: 8px;
-            border-bottom: 1px solid #666;
-            padding-bottom: 4px;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        th,
-        td {
-            border: 1px solid #666;
-            padding: 6px;
-            text-align: left;
-        }
-
-        th {
-            background: #f2f2f2;
-        }
-
-        .text-center {
-            text-align: center;
-        }
-
-        .text-right {
-            text-align: right;
-        }
-
-        .total-row td {
+        .store-name {
+            font-size: 14px;
             font-weight: bold;
+            margin-bottom: 2px;
+        }
+
+        .store-address {
+            font-size: 9px;
+            margin-bottom: 4px;
+        }
+
+        .invoice-info {
+            font-size: 10px;
+            margin-bottom: 3px;
+        }
+
+        .customer-info {
+            margin-bottom: 8px;
+            font-size: 10px;
+        }
+
+        .customer-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 2px;
+        }
+
+        .items-section {
+            margin-bottom: 8px;
+        }
+
+        .section-title {
+            font-size: 10px;
+            font-weight: bold;
+            text-align: center;
+            border-top: 1px dashed #000;
+            border-bottom: 1px dashed #000;
+            padding: 2px 0;
+            margin-bottom: 4px;
+        }
+
+        .item-row {
+            margin-bottom: 3px;
+        }
+
+        .item-name {
+            font-weight: bold;
+        }
+
+        .item-details {
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .qty-price {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+        }
+
+        .separator {
+            border-top: 1px dashed #000;
+            margin: 8px 0;
+        }
+
+        .total-section {
+            margin-bottom: 8px;
+        }
+
+        .total-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 2px;
+            font-size: 10px;
+        }
+
+        .total-final {
+            font-weight: bold;
+            font-size: 11px;
+            border-top: 1px solid #000;
+            border-bottom: 1px solid #000;
+            padding: 3px 0;
+            margin: 5px 0;
+        }
+
+        .footer {
+            text-align: center;
+            font-size: 9px;
+            border-top: 1px dashed #000;
+            padding-top: 5px;
+            margin-top: 10px;
+        }
+
+        .thank-you {
+            margin-bottom: 3px;
+        }
+
+        .date-time {
+            margin-bottom: 2px;
+        }
+
+        @media print {
+            body {
+                width: 80mm;
+                margin: 0;
+                padding: 2mm;
+            }
+
+            .receipt-container {
+                page-break-inside: avoid;
+            }
         }
     </style>
 </head>
 
 <body>
-    {{-- Header --}}
-    <div class="header">
-        <h1>INVOICE TRANSAKSI</h1>
-        <p>No. #{{ $transaksi->id_transaksi }} &bull;
-            {{ \Carbon\Carbon::parse($transaksi->tanggal_transaksi)->format('d F Y') }}</p>
-    </div>
-
-    {{-- Info Umum --}}
-    <div class="section">
-        <table>
-            <tr>
-                <th>Konsumen</th>
-                <td>{{ $transaksi->konsumen->nama_konsumen }}</td>
-                <th>Metode Bayar</th>
-                <td>{{ ucfirst($transaksi->metode_pembayaran) }}</td>
-            </tr>
-        </table>
-    </div>
-
-    {{-- Detail Barang --}}
-    @if($barangs->count())
-        <div class="section">
-            <h2>Detail Barang</h2>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Nama Barang</th>
-                        <th class="text-center">Qty</th>
-                        <th class="text-right">Harga Satuan</th>
-                        <th class="text-right">Subtotal</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach($barangs as $item)
-                        <tr>
-                            <td>{{ $item->model->nama_barang }}</td>
-                            <td class="text-center">{{ $item->qty }}</td>
-                            <td class="text-right">Rp {{ number_format($item->model->harga_jual,0,',','.') }}</td>
-                            <td class="text-right">Rp {{ number_format($item->subtotal,0,',','.') }}</td>
-                        </tr>
-                    @endforeach
-                </tbody>
-            </table>
+    <div class="receipt-container">
+        <!-- Header -->
+        <div class="header">
+            <div class="store-name">Ari Shockbreaker</div>
+            <div class="store-address">
+                Jl. Mahendradata, Bitera, Kec. Gianyar, Kab. Gianyar, Bali 80515
+            </div>
+            <div class="invoice-info">INVOICE #{{ $transaksi->id_transaksi }}</div>
+            <div class="invoice-info">
+                {{ \Carbon\Carbon::parse($transaksi->tanggal_transaksi)->format('d/m/Y H:i') }}
+            </div>
         </div>
-    @endif
 
-    {{-- Detail Jasa --}}
-    @if($jasas->count())
-        <div class="section">
-            <h2>Detail Jasa</h2>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Nama Jasa</th>
-                        <th class="text-right">Harga</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach($jasas as $jasa)
-                        <tr>
-                            <td>{{ $jasa->nama_jasa }}</td>
-                            <td class="text-right">Rp {{ number_format($jasa->harga_jasa,0,',','.') }}</td>
-                        </tr>
-                    @endforeach
-                </tbody>
-            </table>
+        <!-- Customer Info -->
+        <div class="customer-info">
+            <div class="customer-row">
+                <span>Konsumen:</span>
+                <span>{{ $transaksi->konsumen->nama_konsumen }}</span>
+            </div>
+            <div class="customer-row">
+                <span>Pembayaran:</span>
+                <span>{{ ucfirst($transaksi->metode_pembayaran) }}</span>
+            </div>
         </div>
-    @endif
 
-    {{-- Ringkasan Pembayaran --}}
-    <div class="section">
-        <h2>Ringkasan Pembayaran</h2>
-        <table>
-            <tbody>
-                @php
-                    $subtotalBarang = $barangs->sum('subtotal');
-                    $subtotalJasa   = $jasas->sum('harga_jasa');
-                    $subtotal       = $subtotalBarang + $subtotalJasa;
-                    $diskon         = $subtotal - $transaksi->total_harga;
-                @endphp
-                <tr>
-                    <td>Subtotal</td>
-                    <td class="text-right">Rp {{ number_format($subtotal,0,',','.') }}</td>
-                </tr>
-                @if($diskon > 0)
-                    <tr>
-                        <td>Diskon Member</td>
-                        <td class="text-right">- Rp {{ number_format($diskon,0,',','.') }}</td>
-                    </tr>
-                @endif
-                <tr class="total-row">
-                    <td>Total Bayar</td>
-                    <td class="text-right">Rp {{ number_format($transaksi->total_harga,0,',','.') }}</td>
-                </tr>
-                @if($transaksi->points->count())
-                    <tr>
-                        <td>Poin Diperoleh</td>
-                        <td class="text-right">{{ $transaksi->points->sum('jumlah_point') }}</td>
-                    </tr>
-                @endif
-            </tbody>
-        </table>
-    </div>
+        <!-- Items Section -->
+        @if ($barangs->count())
+            <div class="items-section">
+                <div class="section-title">DETAIL BARANG</div>
+                @foreach ($barangs as $item)
+                    <div class="item-row">
+                        <div class="item-name">{{ $item->model->nama_barang }}</div>
+                        <div class="item-details">
+                            <div class="qty-price">
+                                <span>{{ $item->qty }} x
+                                    {{ number_format($item->model->harga_jual, 0, ',', '.') }}</span>
+                                <span>{{ number_format($item->subtotal, 0, ',', '.') }}</span>
+                            </div>
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+        @endif
 
-    {{-- Footer --}}
-    <div style="text-align:center; font-size:10px; color:#777; margin-top:30px;">
-        Terima kasih atas kepercayaan Anda.
+        <!-- Services Section -->
+        @if ($jasas->count())
+            <div class="items-section">
+                <div class="section-title">DETAIL JASA</div>
+                @foreach ($jasas as $jasa)
+                    <div class="item-row">
+                        <div class="item-name">{{ $jasa->nama_jasa }}</div>
+                        <div class="item-details">
+                            <div class="qty-price">
+                                <span>1 x {{ number_format($jasa->harga_jasa, 0, ',', '.') }}</span>
+                                <span>{{ number_format($jasa->harga_jasa, 0, ',', '.') }}</span>
+                            </div>
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+        @endif
+
+        <div class="separator"></div>
+
+        <!-- Totals -->
+        <div class="total-section">
+            <div class="total-row">
+                <span>Subtotal:</span>
+                <span>Rp {{ number_format($subtotal, 0, ',', '.') }}</span>
+            </div>
+
+            @if ($diskon > 0)
+                <div class="total-row">
+                    <span>Diskon (10 poin):</span>
+                    <span>-Rp {{ number_format($diskon, 0, ',', '.') }}</span>
+                </div>
+            @endif
+
+            <div class="total-row total-final">
+                <span>TOTAL BAYAR:</span>
+                <span>Rp {{ number_format($transaksi->total_harga, 0, ',', '.') }}</span>
+            </div>
+
+            <div class="total-row">
+                <span>Uang Diterima:</span>
+                <span>Rp {{ number_format($transaksi->uang_diterima, 0, ',', '.') }}</span>
+            </div>
+
+            <div class="total-row">
+                <span>Kembalian:</span>
+                <span>Rp {{ number_format($kembalian, 0, ',', '.') }}</span>
+            </div>
+
+            @if (isset($sisaPoint))
+                <div class="total-row">
+                    <span>Sisa Poin:</span>
+                    <span>{{ $sisaPoint }} poin</span>
+                </div>
+            @endif
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <div class="thank-you">TERIMA KASIH</div>
+            <div class="thank-you">ATAS KUNJUNGAN ANDA</div>
+            <div class="date-time">{{ \Carbon\Carbon::now()->format('d/m/Y H:i:s') }}</div>
+        </div>
     </div>
 </body>
 

@@ -23,6 +23,8 @@ class Transaksi extends Model
         'metode_pembayaran',
         'status_service',
         'estimasi_pengerjaan',
+        'uang_diterima',        // jumlah uang yang diterima dari konsumen
+        'status_pembayaran',       // status pembayaran, misal: 'lunas', 'belum_lunas'
     ];
 
     protected $casts = [
@@ -89,6 +91,22 @@ public function jasaModels()
         return $this->hasMany(Point::class, 'id_transaksi');
     }
 
+
+    // Accessor: total poin ditukar untuk transaksi ini
+    public function getRedeemedPointsAttribute(): int
+    {
+        $neg = $this->points()
+                    ->where('jumlah_point','<',0)
+                    ->sum('jumlah_point');
+        return abs($neg);
+    }
+
+    // Accessor: diskon Rupiah dari poin (10pt → Rp10.000)
+    public function getPointDiscountAttribute(): int
+    {
+        return intdiv($this->redeemed_points,10) * 10000;
+    }
+
     /**
      * Transaksi dikerjakan oleh satu teknisi.
      */
@@ -123,4 +141,19 @@ public function jasaModels()
 
         return $out;
     }
+
+   public function kasir()
+{
+    return $this->belongsTo(User::class, 'id_user')
+                ->where('level', 'kasir');
+}
+
+    /**
+     * Accessor: total semua barang di transaksi ini.
+     */
+    public function getCalculatedTotalAttribute(): int
+    {
+        return $this->barangWithQty()->sum('subtotal');
+    }
+
 }

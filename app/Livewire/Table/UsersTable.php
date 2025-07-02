@@ -3,6 +3,7 @@
 namespace App\Livewire\Table;
 
 use App\Models\User;
+use Illuminate\Support\Facades\Auth;
 use Rappasoft\LaravelLivewireTables\DataTableComponent;
 use Rappasoft\LaravelLivewireTables\Views\Column;
 
@@ -14,6 +15,14 @@ class UsersTable extends DataTableComponent
     {
         $this->setPrimaryKey('id_user');
     }
+
+    public function builder() : \Illuminate\Database\Eloquent\Builder
+    {
+        return User::query()
+            ->where('id_user', '!=', Auth::id());
+    }
+
+
 
     public function columns(): array
     {

@@ -19,6 +19,8 @@ use App\Http\Controllers\{
     UserController
 };
 
+
+use App\Http\Controllers\LaporanPenjualanBarangController;
 Route::get('/', function () {
     return view('auth.login');
 });
@@ -92,5 +94,14 @@ Route::get('/laporan/barang/pdf', [LaporanBarangController::class, 'exportPdf'])
 
 Route::get('/laporan/penjualan', [LaporanPenjualanController::class, 'index'])->name('laporan.penjualan');
 Route::get('/laporan/penjualan/pdf', [LaporanPenjualanController::class, 'exportPdf'])->name('laporan.penjualan.pdf');
+
+
+Route::prefix('laporan')->group(function(){
+    Route::get('jual-barang', [LaporanPenjualanBarangController::class, 'index'])
+         ->name('laporan.jual.barang');
+    Route::get('jual-barang/pdf', [LaporanPenjualanBarangController::class, 'exportPdf'])
+         ->name('laporan.jual.barang.pdf');
+});
+
 
 });

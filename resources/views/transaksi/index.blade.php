@@ -9,7 +9,7 @@
                 Tambah Transaksi
             </a>
         </div>
-        <div class="border p-4 md:p-6">
+        <div class="border overflow-x-auto p-4 md:p-6 w-full">
             @livewire('table.transaksi-table')
         </div>
     </div>

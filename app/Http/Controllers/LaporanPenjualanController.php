@@ -10,7 +10,7 @@ use Carbon\Carbon;
 class LaporanPenjualanController extends Controller
 {
     /**
-     * Tampilkan halaman laporan penjualan (barang & jasa) dengan filter.
+     * Tampilkan halaman laporan penjualan (barang & jasa) dengan filter dan total.
      */
     public function index(Request $request)
     {
@@ -18,26 +18,38 @@ class LaporanPenjualanController extends Controller
         $end    = $request->input('end_date');
         $search = $request->input('search');
 
-        $query = Transaksi::with('konsumen');
+        // Basis: semua transaksi
+        $baseQuery = Transaksi::with('konsumen');
 
+        // Total semua (tanpa filter)
+        $totalAll = (clone $baseQuery)->sum('total_harga');
+
+        // Clone untuk filter
+        $filtered = (clone $baseQuery);
         if ($start) {
-            $query->whereDate('tanggal_transaksi', '>=', $start);
+            $filtered->whereDate('tanggal_transaksi', '>=', $start);
         }
         if ($end) {
-            $query->whereDate('tanggal_transaksi', '<=', $end);
+            $filtered->whereDate('tanggal_transaksi', '<=', $end);
         }
         if ($search) {
-            $query->whereHas('konsumen', fn($q) =>
+            $filtered->whereHas('konsumen', fn($q) =>
                 $q->where('nama_konsumen', 'like', "%{$search}%")
             );
         }
 
-        $transaksis = $query
+        // Total terfilter
+        $totalFiltered = $filtered->sum('total_harga');
+
+        // Ambil daftar
+        $transaksis = $filtered
             ->orderByDesc('tanggal_transaksi')
             ->paginate(10)
             ->appends(compact('start','end','search'));
 
-        return view('laporan.penjualan.index', compact('transaksis','start','end','search'));
+        return view('laporan.penjualan.index', compact(
+            'transaksis','start','end','search','totalAll','totalFiltered'
+        ));
     }
 
     /**
@@ -50,7 +62,6 @@ class LaporanPenjualanController extends Controller
         $search = $request->input('search');
 
         $query = Transaksi::with('konsumen');
-
         if ($start) {
             $query->whereDate('tanggal_transaksi', '>=', $start);
         }
@@ -63,13 +74,14 @@ class LaporanPenjualanController extends Controller
             );
         }
 
-        $transaksis = $query
-            ->orderByDesc('tanggal_transaksi')
-            ->get();
+        $transaksis     = $query->orderByDesc('tanggal_transaksi')->get();
+        $totalFiltered  = $transaksis->sum('total_harga');
 
-        $pdf = Pdf::loadView('laporan.penjualan.pdf', compact('transaksis','start','end'))
-                  ->setPaper('a4','landscape');
+        $pdf = Pdf::loadView('laporan.penjualan.pdf', compact(
+            'transaksis','start','end','search','totalFiltered'
+        ))
+        ->setPaper('a4','landscape');
 
-        return $pdf->download("laporan-penjualan_{$start}_to_{$end}.pdf");
+       return $pdf->stream("laporan-transaksi-jasa_{$start}_to_{$end}.pdf");
     }
 }
