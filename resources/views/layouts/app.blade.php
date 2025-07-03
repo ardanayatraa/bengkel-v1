@@ -286,23 +286,23 @@
                             </li>
                         @endif
 
-                        @if (auth()->user()->level == 'kasir' || auth()->user()->level == 'admin')
-                            {{-- Konsumen --}}
-                            <li class="relative">
-                                <a href="/konsumen"
-                                    class="flex items-center px-4 py-3 {{ request()->is('konsumen*') ? 'text-red-800 bg-white' : 'text-gray-800' }} rounded-md relative z-10">
-                                    <div
-                                        class="p-1.5 rounded-full mr-3 {{ request()->is('konsumen*') ? 'bg-red-700' : 'bg-gray-400' }}">
-                                        <svg class="w-4 h-4 {{ request()->is('konsumen*') ? 'text-white' : 'text-gray-800' }}"
-                                            fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M5.121 17.804A10.97 10.97 0 0112 15c2.21 0 4.253.64 5.879 1.804M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                                        </svg>
-                                    </div>
-                                    <span class="font-medium">Konsumen</span>
-                                </a>
-                            </li>
-                        @endif
+
+                        {{-- Konsumen --}}
+                        <li class="relative">
+                            <a href="/konsumen"
+                                class="flex items-center px-4 py-3 {{ request()->is('konsumen*') ? 'text-red-800 bg-white' : 'text-gray-800' }} rounded-md relative z-10">
+                                <div
+                                    class="p-1.5 rounded-full mr-3 {{ request()->is('konsumen*') ? 'bg-red-700' : 'bg-gray-400' }}">
+                                    <svg class="w-4 h-4 {{ request()->is('konsumen*') ? 'text-white' : 'text-gray-800' }}"
+                                        fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M5.121 17.804A10.97 10.97 0 0112 15c2.21 0 4.253.64 5.879 1.804M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    </svg>
+                                </div>
+                                <span class="font-medium">Konsumen</span>
+                            </a>
+                        </li>
+
 
                         @if (auth()->user()->level == 'kasir')
                             {{-- Transaksi --}}
