@@ -65,98 +65,99 @@ class TransaksiTable extends DataTableComponent
 
     public function columns(): array
     {
-        return [
+        $columns = [
             Column::make('ID Transaksi', 'id_transaksi')
                 ->sortable()
                 ->searchable(),
 
             Column::make('Nama Konsumen', 'konsumen.nama_konsumen')
-                ->sortable(fn($q,$d) =>
-                    $q->join('konsumens','transaksis.id_konsumen','=','konsumens.id_konsumen')
-                      ->orderBy('konsumens.nama_konsumen',$d)
+                ->sortable(fn($q, $d) =>
+                    $q->join('konsumens', 'transaksis.id_konsumen', '=', 'konsumens.id_konsumen')
+                    ->orderBy('konsumens.nama_konsumen', $d)
                 )
                 ->searchable(),
 
-            Column::make('Kasir','kasir.nama_user')
-                ->sortable()
-                ->searchable(),
-            Column::make('Tanggal Transaksi','tanggal_transaksi')
+            Column::make('Kasir', 'kasir.nama_user')
                 ->sortable()
                 ->searchable(),
 
-            Column::make('Total Harga','total_harga')
-                ->sortable()
-                ->format(fn($v)=>'Rp '.number_format($v,0,',','.')),
-
-            Column::make('Metode Pembayaran','metode_pembayaran')
+            Column::make('Tanggal Transaksi', 'tanggal_transaksi')
                 ->sortable()
                 ->searchable(),
 
-            // === NEW: Status Pembayaran INLINE ===
-           Column::make('Status Pembayaran')
-    ->html()
-    ->format(function($_, $row) {
-        $options = ['belum bayar','lunas'];
-        $html = '<select wire:change="updatePaymentStatus('
-              . $row->id_transaksi
-              . ', $event.target.value)" class="border rounded px-2 py-1 bg-white">';
-        foreach ($options as $opt) {
-            $sel = $row->status_pembayaran === $opt ? ' selected' : '';
-            $html .= "<option value=\"{$opt}\"{$sel}>"
-                   . ucfirst($opt)
-                   . "</option>";
-        }
-        return $html.'</select>';
-    }),
+            Column::make('Total Harga', 'total_harga')
+                ->sortable()
+                ->format(fn($v) => 'Rp ' . number_format($v, 0, ',', '.')),
 
+            Column::make('Metode Pembayaran', 'metode_pembayaran')
+                ->sortable()
+                ->searchable(),
 
-            // EXISTING: Status Service
-            Column::make('Status Service')
+            // Inline select untuk Status Pembayaran
+            Column::make('Status Pembayaran')
                 ->html()
-                ->format(function($_,$row){
-                    $raw = $row->id_jasa;
-                    $ids = is_array($raw) ? $raw : (json_decode($raw,true)?:[]);
-                    $hasJasa = Arr::isList($ids) && count($ids)>0;
-                    if(!$hasJasa) {
-                        return '<span class="text-gray-400">–</span>';
+                ->format(function ($_, $row) {
+                    $options = ['belum bayar', 'lunas'];
+                    $html = '<select wire:change="updatePaymentStatus('
+                        . $row->id_transaksi
+                        . ', $event.target.value)" class="border rounded px-2 py-1 bg-white">';
+                    foreach ($options as $opt) {
+                        $sel = $row->status_pembayaran === $opt ? ' selected' : '';
+                        $html .= "<option value=\"{$opt}\"{$sel}>"
+                            . ucfirst($opt)
+                            . "</option>";
                     }
-                    $options = ['proses','selesai','diambil'];
-                    $html = '<select wire:change="updateStatus('.$row->id_transaksi.', $event.target.value)" '
-                          . 'class="border rounded px-2 py-1 bg-white">';
-                    foreach($options as $opt){
-                        $sel   = $row->status_service === $opt ? ' selected' : '';
-                        $lbl   = ucfirst($opt);
-                        $html .= "<option value=\"{$opt}\"{$sel}>{$lbl}</option>";
-                    }
-                    return $html.'</select>';
+                    return $html . '</select>';
                 }),
 
-            Column::make('Estimasi Pengerjaan','estimasi_pengerjaan')
+            // Inline select untuk Status Service
+            Column::make('Status Service')
+                ->html()
+                ->format(function ($_, $row) {
+                    $raw = $row->id_jasa;
+                    $ids = is_array($raw) ? $raw : (json_decode($raw, true) ?: []);
+                    $hasJasa = \Illuminate\Support\Arr::isList($ids) && count($ids) > 0;
+                    if (!$hasJasa) {
+                        return '<span class="text-gray-400">–</span>';
+                    }
+                    $options = ['proses', 'selesai', 'diambil'];
+                    $html = '<select wire:change="updateStatus(' . $row->id_transaksi . ', $event.target.value)" class="border rounded px-2 py-1 bg-white">';
+                    foreach ($options as $opt) {
+                        $sel = $row->status_service === $opt ? ' selected' : '';
+                        $html .= "<option value=\"{$opt}\"{$sel}>" . ucfirst($opt) . "</option>";
+                    }
+                    return $html . '</select>';
+                }),
+
+            Column::make('Estimasi Pengerjaan', 'estimasi_pengerjaan')
                 ->sortable()
                 ->searchable(),
 
-            Column::make('Teknisi','teknisi.nama_teknisi')
-                ->sortable(fn($q,$d)=>
-                    $q->leftJoin('teknisis','transaksis.id_teknisi','=','teknisis.id_teknisi')
-                      ->orderBy('teknisis.nama_teknisi',$d)
+            Column::make('Teknisi', 'teknisi.nama_teknisi')
+                ->sortable(fn($q, $d) =>
+                    $q->leftJoin('teknisis', 'transaksis.id_teknisi', '=', 'teknisis.id_teknisi')
+                    ->orderBy('teknisis.nama_teknisi', $d)
                 )
                 ->searchable(),
 
             LinkColumn::make('Detail')
                 ->title(fn($row) => 'Detail')
-                ->location(fn($row)=>route('transaksi.show',$row->id_transaksi)),
-
-             Column::make('Aksi')
-                    ->label(fn($row) => view('components.table-action-admin-trx', [
-
-                'deleteRoute' => Auth::user()->level === 'admin'
-                    ? route('transaksi.destroy', $row->id_transaksi)
-                    : null,
-                'modalId'     => 'delete-transaksi-' . $row->id_transaksi,
-            ]))
-            ->html(),
+                ->location(fn($row) => route('transaksi.show', $row->id_transaksi)),
         ];
+
+        // Tambahkan kolom Aksi hanya jika user adalah admin
+        if (Auth::user()->level === 'admin') {
+            $columns[] = Column::make('Aksi')
+                ->label(fn($row) => view('components.table-action-admin-trx', [
+                    'deleteRoute' => route('transaksi.destroy', $row->id_transaksi),
+                    'modalId'     => 'delete-transaksi-' . $row->id_transaksi,
+                ]))
+                ->html();
+        }
+
+        return $columns;
     }
+
 
     /**
      * Update status_service existing method...
