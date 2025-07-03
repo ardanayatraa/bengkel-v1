@@ -140,8 +140,9 @@
                                 <span class="flex-1">{{ $b->nama_barang }} — Rp
                                     {{ number_format($b->harga_jual, 0, ',', '.') }}</span>
                                 <input type="number" name="qty_barang[{{ $b->id_barang }}]"
-                                    value="{{ old('qty_barang.' . $b->id_barang, 1) }}" min="1" disabled
-                                    class="qty-input w-16 p-1 border rounded text-sm" />
+                                    value="{{ old('qty_barang.' . $b->id_barang, 1) }}" min="1"
+                                    class="qty-input w-16 p-1 border rounded text-sm"
+                                    {{ is_array(old('id_barang')) && in_array($b->id_barang, old('id_barang')) ? '' : 'disabled' }} />
                             </div>
                         @endforeach
                     </div>
@@ -197,18 +198,25 @@
             let v = +redeemInput.value;
             v = Math.floor(v / 10) * 10;
             const max = +redeemInput.max || 0;
-            if (v < 0) v = 0;
-            if (v > max) v = max;
-            redeemInput.value = v;
+            redeemInput.value = Math.min(Math.max(0, v), max);
         }
 
         function updateSisa() {
             const id = +document.getElementById('id_konsumen').value;
             const saldo = pointsMap[id] || 0;
-            const usePt = +redeemInput.value || 0;
-            sisaDisplay.textContent = saldo - usePt;
+            sisaDisplay.textContent = saldo - (+redeemInput.value || 0);
         }
 
+        // enable/disable qty-input sesuai checkbox
+        document.querySelectorAll('.barang-cb').forEach(cb => {
+            cb.addEventListener('change', e => {
+                const qty = e.target.closest('div').querySelector('.qty-input');
+                qty.disabled = !e.target.checked;
+                calculate();
+            });
+        });
+
+        // redeem buttons
         document.getElementById('decrement_redeem').addEventListener('click', () => {
             redeemInput.stepDown();
             normalizeRedeem();
@@ -222,6 +230,7 @@
             calculate();
         });
 
+        // konsumen change
         document.getElementById('id_konsumen').addEventListener('change', () => {
             const id = +document.getElementById('id_konsumen').value;
             const saldo = pointsMap[id] || 0;
@@ -232,8 +241,9 @@
             calculate();
         });
 
+        // re-calculate on input changes
         document.querySelectorAll(
-            '#id_konsumen, .barang-cb, .jasa-cb, .qty-input, #uang_diterima'
+            '#id_konsumen, .jasa-cb, .qty-input, #uang_diterima'
         ).forEach(el => el.addEventListener('change', calculate));
         redeemInput.addEventListener('input', () => {
             normalizeRedeem();
@@ -245,24 +255,25 @@
             let sum = 0;
             document.querySelectorAll('.barang-cb:checked').forEach(cb => {
                 const harga = +cb.dataset.harga;
-                const qty = +document.querySelector(`[name="qty_barang[${cb.value}]"]`).value || 1;
+                const qty = +cb.closest('div').querySelector('.qty-input').value || 1;
                 sum += harga * qty;
             });
-            document.querySelectorAll('.jasa-cb:checked').forEach(cb => {
-                sum += +cb.dataset.harga;
-            });
-            const redeemPts = +redeemInput.value || 0;
-            sum -= (redeemPts / 10) * 10000;
+            document.querySelectorAll('.jasa-cb:checked').forEach(cb => sum += +cb.dataset.harga);
+            const redeem = +redeemInput.value || 0;
+            sum -= (redeem / 10) * 10000;
             updateSisa();
             document.getElementById('total_harga').value = sum;
             document.getElementById('total_display').value = formatRupiah(sum);
             const bayar = +document.getElementById('uang_diterima').value || 0;
             const kembali = bayar - sum;
-            document.getElementById('kembalian_display').value =
-                kembali >= 0 ? formatRupiah(kembali) : '';
+            document.getElementById('kembalian_display').value = kembali >= 0 ? formatRupiah(kembali) : '';
         }
 
         window.addEventListener('load', () => {
+            document.querySelectorAll('.barang-cb').forEach(cb => {
+                const qty = cb.closest('div').querySelector('.qty-input');
+                qty.disabled = !cb.checked;
+            });
             document.getElementById('id_konsumen').dispatchEvent(new Event('change'));
         });
     </script>
