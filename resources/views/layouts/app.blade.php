@@ -304,23 +304,23 @@
                         </li>
 
 
-                        @if (auth()->user()->level == 'kasir')
-                            {{-- Transaksi --}}
-                            <li class="relative">
-                                <a href="/transaksi"
-                                    class="flex items-center px-4 py-3 {{ request()->is('transaksi*') ? 'text-red-800 bg-white' : 'text-gray-800' }} rounded-md relative z-10">
-                                    <div
-                                        class="p-1.5 rounded-full mr-3 {{ request()->is('transaksi*') ? 'bg-red-700' : 'bg-gray-400' }}">
-                                        <svg class="w-4 h-4 {{ request()->is('transaksi*') ? 'text-white' : 'text-gray-800' }}"
-                                            fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M17 9V7a4 4 0 00-8 0v2m-2 0h12l-1 13H6L5 9h12z" />
-                                        </svg>
-                                    </div>
-                                    <span class="font-medium">Transaksi</span>
-                                </a>
-                            </li>
-                        @endif
+
+                        {{-- Transaksi --}}
+                        <li class="relative">
+                            <a href="/transaksi"
+                                class="flex items-center px-4 py-3 {{ request()->is('transaksi*') ? 'text-red-800 bg-white' : 'text-gray-800' }} rounded-md relative z-10">
+                                <div
+                                    class="p-1.5 rounded-full mr-3 {{ request()->is('transaksi*') ? 'bg-red-700' : 'bg-gray-400' }}">
+                                    <svg class="w-4 h-4 {{ request()->is('transaksi*') ? 'text-white' : 'text-gray-800' }}"
+                                        fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M17 9V7a4 4 0 00-8 0v2m-2 0h12l-1 13H6L5 9h12z" />
+                                    </svg>
+                                </div>
+                                <span class="font-medium">Transaksi</span>
+                            </a>
+                        </li>
+
 
                         {{-- Laporan (Group) --}}
                         <li class="relative">
