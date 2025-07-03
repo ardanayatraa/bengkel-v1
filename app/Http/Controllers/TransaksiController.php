@@ -252,4 +252,26 @@ class TransaksiController extends Controller
     return $pdf->stream("nota_{$transaksi->id_transaksi}.pdf");
 }
 
+
+/**
+ * Remove the specified Transaksi from storage.
+ *
+ * @param  int  $id
+ * @return \Illuminate\Http\RedirectResponse
+ */
+public function destroy($id)
+{
+    // Cari transaksi atau gagal 404
+    $transaksi = Transaksi::findOrFail($id);
+
+    // Hapus transaksi
+    $transaksi->delete();
+
+    // Redirect kembali ke index dengan flash message
+    return redirect()
+        ->route('transaksi.index')
+        ->with('success', 'Transaksi berhasil dihapus.');
+}
+
+
 }
