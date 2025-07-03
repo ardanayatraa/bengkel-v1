@@ -223,30 +223,33 @@ class TransaksiController extends Controller
     $transaksi = Transaksi::with(['konsumen','teknisi','points'])
         ->findOrFail($id);
 
-    // Persiapkan data barang & jasa
-    $barangs = $transaksi->barangWithQty();
-    $jasas   = $transaksi->jasaModels();
+    $barangs  = $transaksi->barangWithQty();
+    $jasas    = $transaksi->jasaModels();
 
-    // Hitung subtotal barang + jasa
-    $subtotal = $barangs->sum('subtotal')
-              + collect($jasas)->sum(fn($j) => $j->harga_jasa);
-
-    // Diskon poin
-    $diskon = $transaksi->point_discount;
-
-    // Kembalian
+    // Hitung subtotal dan diskon
+    $subtotal  = $barangs->sum('subtotal') + collect($jasas)->sum(fn($j)=>$j->harga_jasa);
+    $diskon    = $transaksi->point_discount;
     $kembalian = $transaksi->uang_diterima - $transaksi->total_harga;
-
-    // Sisa poin (setelah redeem)
     $sisaPoint = $transaksi->konsumen->jumlah_point;
+
+    // Lebar kertas: 80 mm → poin (1 mm ≈ 2.83465 pt)
+    $widthPt = 80 * 3.83465;
+
+    // Hitung tinggi: header(8mm) + tiap baris ~8mm
+    $lineCount = 6                     // header & info
+               + $barangs->count()
+               + $jasas->count()
+               + 5;                    // footer & totals
+    $heightMm  = 8 + ($lineCount * 8);
+    $heightPt  = $heightMm * 2.83465;
 
     $pdf = Pdf::loadView('transaksi.print', compact(
         'transaksi','barangs','jasas',
         'subtotal','diskon','kembalian','sisaPoint'
     ))
-    ->setPaper('a4','portrait');
+    ->setPaper([0, 0, $widthPt, $heightPt]);
 
-    return $pdf->stream("transaksi_{$transaksi->id_transaksi}.pdf");
+    return $pdf->stream("nota_{$transaksi->id_transaksi}.pdf");
 }
 
 }
