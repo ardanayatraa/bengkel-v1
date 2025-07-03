@@ -218,17 +218,35 @@ class TransaksiController extends Controller
         ));
     }
 
-    public function print($id)
-    {
-        $transaksi = Transaksi::with(['konsumen','teknisi','points'])
-            ->findOrFail($id);
+   public function print($id)
+{
+    $transaksi = Transaksi::with(['konsumen','teknisi','points'])
+        ->findOrFail($id);
 
-        $barangs   = $transaksi->barangWithQty();
-        $jasas     = $transaksi->jasaModels();
+    // Persiapkan data barang & jasa
+    $barangs = $transaksi->barangWithQty();
+    $jasas   = $transaksi->jasaModels();
 
-        $pdf = Pdf::loadView('transaksi.print', compact('transaksi','barangs','jasas'))
-            ->setPaper('a4','portrait');
+    // Hitung subtotal barang + jasa
+    $subtotal = $barangs->sum('subtotal')
+              + collect($jasas)->sum(fn($j) => $j->harga_jasa);
 
-        return $pdf->download("transaksi_{$transaksi->id_transaksi}.pdf");
-    }
+    // Diskon poin
+    $diskon = $transaksi->point_discount;
+
+    // Kembalian
+    $kembalian = $transaksi->uang_diterima - $transaksi->total_harga;
+
+    // Sisa poin (setelah redeem)
+    $sisaPoint = $transaksi->konsumen->jumlah_point;
+
+    $pdf = Pdf::loadView('transaksi.print', compact(
+        'transaksi','barangs','jasas',
+        'subtotal','diskon','kembalian','sisaPoint'
+    ))
+    ->setPaper('a4','portrait');
+
+    return $pdf->stream("transaksi_{$transaksi->id_transaksi}.pdf");
+}
+
 }
