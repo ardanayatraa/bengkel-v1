@@ -33,7 +33,7 @@
                         </a>
 
                         <!-- Service Hari Ini -->
-                        <a href="{{ route('laporan.penjualan', ['filter' => 'service_today']) }}"
+                        <a href="{{ route('laporan.jasa', ['filter' => 'service_today']) }}"
                             class="block bg-gradient-to-r from-green-500 to-green-600 text-white shadow-lg rounded-lg hover:opacity-90 transition">
                             <div class="p-6 flex items-center">
                                 <i class="fas fa-tools w-8 h-8 flex-shrink-0"></i>
