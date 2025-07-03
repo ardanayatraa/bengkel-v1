@@ -204,7 +204,7 @@
                             </li>
 
 
-                            <li class="relative">
+                            {{-- <li class="relative">
                                 <a href="/transaksi"
                                     class="flex items-center px-4 py-3 {{ request()->is('transaksi*') ? 'text-red-800 bg-white' : 'text-gray-800' }} rounded-md relative z-10">
                                     <div
@@ -217,7 +217,7 @@
                                     </div>
                                     <span class="font-medium">Transaksi</span>
                                 </a>
-                            </li>
+                            </li> --}}
 
                             {{-- Teknisi --}}
                             <li class="relative">
