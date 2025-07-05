@@ -32,6 +32,7 @@
                 <thead class="bg-gray-50">
                     <tr>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Barang</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Kategori</th>
                         <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Stok Awal</th>
                         <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Masuk</th>
                         <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Keluar</th>
@@ -42,6 +43,9 @@
                     @foreach ($stockSummary as $s)
                         <tr>
                             <td class="px-6 py-4 text-sm text-gray-900">{{ $s->barang->nama_barang }}</td>
+                            <td class="px-6 py-4 text-sm text-gray-900">
+                                {{ $s->barang->kategori?->nama_kategori ?? '-' }}
+                            </td>
                             <td class="px-6 py-4 text-sm text-gray-900 text-right">{{ $s->stok_awal }}</td>
                             <td class="px-6 py-4 text-sm text-gray-900 text-right">{{ $s->masuk }}</td>
                             <td class="px-6 py-4 text-sm text-gray-900 text-right">{{ $s->keluar }}</td>
@@ -51,7 +55,7 @@
                 </tbody>
                 <tfoot class="bg-gray-50 font-semibold">
                     <tr>
-                        <td class="px-6 py-3 text-right">TOTAL:</td>
+                        <td colspan="2" class="px-6 py-3 text-right">TOTAL:</td>
                         <td class="px-6 py-3 text-right">{{ $totalStokAwal }}</td>
                         <td class="px-6 py-3 text-right">{{ $totalMasuk }}</td>
                         <td class="px-6 py-3 text-right">{{ $totalKeluar }}</td>

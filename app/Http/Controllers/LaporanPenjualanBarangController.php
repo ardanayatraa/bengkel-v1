@@ -4,25 +4,32 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Transaksi;
+use App\Models\Barang;
+use App\Models\Kategori;
 use Barryvdh\DomPDF\Facade\Pdf;
 
 class LaporanPenjualanBarangController extends Controller
 {
     public function index(Request $request)
     {
-        $start  = $request->input('start_date');
-        $end    = $request->input('end_date');
-        $search = $request->input('search');
+        $start     = $request->input('start_date');
+        $end       = $request->input('end_date');
+        $search    = $request->input('search');
+        $category  = $request->input('category');
 
-        // Base query: semua transaksi yang punya barang
+        // Untuk dropdown kategori
+        $categories = Kategori::orderBy('nama_kategori')->get();
+
+        // Base query: hanya Transaksi yang punya id_barang JSON non-empty
         $base = Transaksi::with(['konsumen','kasir'])
             ->whereJsonLength('id_barang','>',0);
 
-        // Total keseluruhan (tanpa filter)
+        // Hitung total tanpa filter
         $totalAll = $base->get()->sum->calculated_total;
 
-        // Terapkan filter hanya jika ada input
+        // Clone untuk filter
         $filtered = clone $base;
+
         if ($start) {
             $filtered->whereDate('tanggal_transaksi','>=',$start);
         }
@@ -35,32 +42,44 @@ class LaporanPenjualanBarangController extends Controller
                   ->orWhere('no_kendaraan','like',"%{$search}%");
             });
         }
+        if ($category) {
+            // Ambil semua ID barang di kategori ini
+            $barangIds = Barang::where('id_kategori',$category)
+                ->pluck('id_barang')
+                ->toArray();
 
-        // Total setelah filter (atau sama dengan totalAll jika tidak ada filter)
+            // Filter transaksi yang JSON id_barang memiliki salah satu key tersebut
+            $filtered->where(function($q) use($barangIds){
+                foreach ($barangIds as $bid) {
+                    $q->orWhereRaw("JSON_EXTRACT(id_barang, '$.\"{$bid}\"') IS NOT NULL");
+                }
+            });
+        }
+
+        // Hitung total setelah filter
         $totalFiltered = $filtered->get()->sum->calculated_total;
 
-        // Paginate untuk web view
-        $transaksis = $filtered
-            ->orderByDesc('tanggal_transaksi')
+        // Paginate & sertakan query string
+        $transaksis = $filtered->orderByDesc('tanggal_transaksi')
             ->paginate(10)
-            ->appends(compact('start','end','search'));
+            ->appends(compact('start','end','search','category'));
 
         return view('laporan.jual-barang.index', compact(
-            'transaksis','start','end','search','totalAll','totalFiltered'
+            'transaksis','start','end','search','category',
+            'categories','totalAll','totalFiltered'
         ));
     }
 
     public function exportPdf(Request $request)
     {
-        $start  = $request->input('start_date');
-        $end    = $request->input('end_date');
-        $search = $request->input('search');
+        $start     = $request->input('start_date');
+        $end       = $request->input('end_date');
+        $search    = $request->input('search');
+        $category  = $request->input('category');
 
-        // Base query: semua transaksi yang punya barang
         $base = Transaksi::with(['konsumen','kasir'])
             ->whereJsonLength('id_barang','>',0);
 
-        // Terapkan filter hanya jika ada input
         if ($start) {
             $base->whereDate('tanggal_transaksi','>=',$start);
         }
@@ -73,17 +92,25 @@ class LaporanPenjualanBarangController extends Controller
                   ->orWhere('no_kendaraan','like',"%{$search}%");
             });
         }
+        if ($category) {
+            $barangIds = Barang::where('id_kategori',$category)
+                ->pluck('id_barang')
+                ->toArray();
+            $base->where(function($q) use($barangIds){
+                foreach ($barangIds as $bid) {
+                    $q->orWhereRaw("JSON_EXTRACT(id_barang, '$.\"{$bid}\"') IS NOT NULL");
+                }
+            });
+        }
 
-        // Ambil data (semua atau terfilter)
         $transaksis    = $base->orderByDesc('tanggal_transaksi')->get();
         $totalFiltered = $transaksis->sum->calculated_total;
 
-        // Load PDF
         $pdf = Pdf::loadView('laporan.jual-barang.pdf', compact(
-            'transaksis','start','end','search','totalFiltered'
+            'transaksis','start','end','search','category','totalFiltered'
         ))
         ->setPaper('a4','landscape');
 
-        return $pdf->stream("laporan-penjualan-barang.pdf");
+        return $pdf->stream("laporan-penjualan-barang_{$start}_to_{$end}.pdf");
     }
 }

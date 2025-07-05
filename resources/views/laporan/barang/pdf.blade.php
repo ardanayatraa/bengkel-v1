@@ -34,7 +34,6 @@
             border: 1px solid #ccc;
             padding: 6px;
             font-size: 11px;
-            text-align: left;
         }
 
         th {
@@ -107,13 +106,14 @@
         <div class="periode">
             Periode: {{ \Carbon\Carbon::parse($start)->format('d/m/Y') }}
             – {{ \Carbon\Carbon::parse($end)->format('d/m/Y') }}
-            &mdash; Halaman {{ $i + 1 }}/{{ $chunks->count() }}
+            — Halaman {{ $i + 1 }}/{{ $chunks->count() }}
         </div>
 
         <table>
             <thead>
                 <tr>
                     <th>Barang</th>
+                    <th>Kategori</th>
                     <th>Stok Awal</th>
                     <th>Masuk</th>
                     <th>Keluar</th>
@@ -124,6 +124,7 @@
                 @foreach ($page as $s)
                     <tr>
                         <td>{{ $s->barang->nama_barang }}</td>
+                        <td>{{ $s->barang->kategori?->nama_kategori ?? '-' }}</td>
                         <td>{{ $s->stok_awal }}</td>
                         <td>{{ $s->masuk }}</td>
                         <td>{{ $s->keluar }}</td>
@@ -134,7 +135,7 @@
             @if ($i + 1 === $chunks->count())
                 <tfoot>
                     <tr>
-                        <td style="text-align:right;">TOTAL:</td>
+                        <td colspan="2" style="text-align:right;">TOTAL:</td>
                         <td>{{ $totalStokAwal }}</td>
                         <td>{{ $totalMasuk }}</td>
                         <td>{{ $totalKeluar }}</td>

@@ -34,7 +34,7 @@
             border: 1px solid #ccc;
             padding: 6px;
             font-size: 11px;
-            text-align: left;
+            vertical-align: top;
         }
 
         th {
@@ -52,8 +52,9 @@
         }
 
         .kop {
-            margin-bottom: 12px;
             width: 100%;
+            margin-bottom: 12px;
+            border-collapse: collapse;
         }
 
         .kop-logo {
@@ -80,7 +81,7 @@
         $logo = public_path('assets/img/logo.png');
         $logoData = file_exists($logo) ? base64_encode(file_get_contents($logo)) : null;
         $mime = $logoData ? mime_content_type($logo) : '';
-        $chunks = $transaksis->chunk(25);
+        $chunks = $transaksis->chunk(20);
     @endphp
 
     <table class="kop">
@@ -104,7 +105,7 @@
         <div class="periode">
             Periode: {{ \Carbon\Carbon::parse($start)->format('d/m/Y') }}
             – {{ \Carbon\Carbon::parse($end)->format('d/m/Y') }}
-            &mdash; Halaman {{ $i + 1 }}/{{ $chunks->count() }}
+            — Halaman {{ $i + 1 }}/{{ $chunks->count() }}
         </div>
 
         <table>
@@ -114,10 +115,11 @@
                     <th>Kasir</th>
                     <th>Pelanggan</th>
                     <th>No Polisi</th>
+                    <th>Kategori</th>
                     <th>Barang (qty & subtotal)</th>
                     <th>Tanggal</th>
                     <th>Total</th>
-                    <th>Metode Bayar</th>
+                    <th>Bayar</th>
                 </tr>
             </thead>
             <tbody>
@@ -128,9 +130,13 @@
                         <td>{{ $trx->konsumen->nama_konsumen ?? '-' }}</td>
                         <td>{{ $trx->konsumen->no_kendaraan ?? '-' }}</td>
                         <td>
+                            @php $first = $trx->barangWithQty()->first(); @endphp
+                            {{ $first?->model->kategori?->nama_kategori ?? '-' }}
+                        </td>
+                        <td>
                             @foreach ($trx->barangWithQty() as $b)
-                                {{ $b->model->nama_barang }}×{{ $b->qty }} = Rp
-                                {{ number_format($b->subtotal, 0, ',', '.') }}<br>
+                                {{ $b->model->nama_barang }}×{{ $b->qty }}
+                                = Rp {{ number_format($b->subtotal, 0, ',', '.') }}<br>
                             @endforeach
                         </td>
                         <td>{{ \Carbon\Carbon::parse($trx->tanggal_transaksi)->format('d/m/Y') }}</td>
@@ -142,7 +148,7 @@
             @if ($i + 1 === $chunks->count())
                 <tfoot>
                     <tr>
-                        <td colspan="6" style="text-align:right;">Total (terfilter):</td>
+                        <td colspan="7" style="text-align:right;">Total (terfilter):</td>
                         <td>Rp {{ number_format($totalFiltered, 0, ',', '.') }}</td>
                         <td></td>
                     </tr>
