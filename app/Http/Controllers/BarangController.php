@@ -19,7 +19,8 @@ class BarangController extends Controller
     {
         $suppliers = Supplier::all();
         $kategoris = Kategori::all();
-        return view('barang.create', compact('suppliers', 'kategoris'));
+        $barangs = Barang::all();
+        return view('barang.create', compact('suppliers', 'kategoris', 'barangs'));
     }
 
     public function store(Request $request)
