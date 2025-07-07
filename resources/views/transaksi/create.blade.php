@@ -15,10 +15,31 @@
                             <option value="{{ $k->id_konsumen }}" data-point="{{ $k->jumlah_point }}"
                                 {{ old('id_konsumen') == $k->id_konsumen ? 'selected' : '' }}>
                                 {{ $k->nama_konsumen }} — {{ $k->jumlah_point }} pt
+                                @if ($k->kode_referral)
+                                    — Kode: {{ $k->kode_referral }}
+                                @endif
                             </option>
                         @endforeach
                     </select>
                     @error('id_konsumen')
+                        <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                {{-- Kode Referral --}}
+                <div>
+                    <label class="block mb-1 font-medium">Kode Referral (Opsional)</label>
+                    <div class="flex space-x-2">
+                        <input type="text" name="kode_referral" id="kode_referral" value="{{ old('kode_referral') }}"
+                            class="flex-1 p-2 border rounded uppercase" placeholder="Masukkan kode referral"
+                            maxlength="10" />
+                        <button type="button" id="check_referral"
+                            class="px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+                            Cek
+                        </button>
+                    </div>
+                    <div id="referral_message" class="mt-1 text-sm"></div>
+                    @error('kode_referral')
                         <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
                     @enderror
                 </div>
@@ -151,11 +172,29 @@
                     @enderror
                 </div>
 
-                {{-- Total Harga --}}
-                <div>
-                    <label class="block mb-1 font-medium">Total Harga</label>
-                    <input type="text" id="total_display" readonly class="w-full p-2 border rounded mb-1" />
-                    <input type="hidden" name="total_harga" id="total_harga" />
+                {{-- Diskon & Total --}}
+                <div class="md:col-span-2 bg-gray-50 p-4 rounded">
+                    <h3 class="font-medium mb-3">Ringkasan Pembayaran</h3>
+
+                    <div class="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                            <span>Subtotal:</span>
+                            <span id="subtotal_display" class="float-right font-medium">Rp 0</span>
+                        </div>
+                        <div>
+                            <span>Diskon Poin:</span>
+                            <span id="diskon_poin_display" class="float-right font-medium text-green-600">Rp 0</span>
+                        </div>
+                        <div>
+                            <span>Diskon Referral:</span>
+                            <span id="diskon_referral_display" class="float-right font-medium text-green-600">Rp
+                                0</span>
+                        </div>
+                        <div class="border-t pt-2">
+                            <span class="font-bold">Total:</span>
+                            <span id="total_display" class="float-right font-bold">Rp 0</span>
+                        </div>
+                    </div>
                 </div>
 
                 {{-- Uang Diterima --}}
@@ -196,6 +235,8 @@
         const jasaCheckboxes = document.querySelectorAll('.jasa-cb');
         const estimasiWrapper = document.getElementById('estimasi_wrapper');
 
+        let diskonReferral = 0; // variable untuk menyimpan diskon referral
+
         function normalizeRedeem() {
             let v = +redeemInput.value;
             v = Math.floor(v / 10) * 10;
@@ -211,39 +252,116 @@
         }
 
         function toggleEstimasi() {
-            // tampilkan estimasi jika ada jasa tercentang
             const anyJasa = Array.from(jasaCheckboxes).some(cb => cb.checked);
             estimasiWrapper.classList.toggle('hidden', !anyJasa);
         }
 
         function calculate() {
-            let sum = 0;
-            // barang
+            let subtotal = 0;
+
+            // Hitung barang
             document.querySelectorAll('.barang-cb:checked').forEach(cb => {
                 const harga = +cb.dataset.harga;
                 const qty = +cb.closest('div').querySelector('.qty-input').value || 1;
-                sum += harga * qty;
+                subtotal += harga * qty;
             });
-            // jasa
+
+            // Hitung jasa
             jasaCheckboxes.forEach(cb => {
-                if (cb.checked) sum += +cb.dataset.harga;
+                if (cb.checked) subtotal += +cb.dataset.harga;
             });
-            // diskon poin
+
+            // Diskon poin
             const redeemPts = +redeemInput.value || 0;
-            sum -= (redeemPts / 10) * 10000;
+            const diskonPoin = (redeemPts / 10) * 10000;
+
+            // Total setelah semua diskon
+            const total = Math.max(0, subtotal - diskonPoin - diskonReferral);
+
+            // Update display
+            document.getElementById('subtotal_display').textContent = formatRupiah(subtotal);
+            document.getElementById('diskon_poin_display').textContent = '-' + formatRupiah(diskonPoin);
+            document.getElementById('diskon_referral_display').textContent = '-' + formatRupiah(diskonReferral);
+            document.getElementById('total_display').textContent = formatRupiah(total);
 
             updateSisa();
             toggleEstimasi();
 
-            document.getElementById('total_harga').value = sum;
-            document.getElementById('total_display').value = formatRupiah(sum);
             const bayar = +document.getElementById('uang_diterima').value || 0;
-            const kembali = bayar - sum;
+            const kembali = bayar - total;
             document.getElementById('kembalian_display').value =
                 kembali >= 0 ? formatRupiah(kembali) : '';
         }
 
-        // init listeners
+        // Check referral code
+        document.getElementById('check_referral').addEventListener('click', function() {
+            const kodeReferral = document.getElementById('kode_referral').value.trim().toUpperCase();
+            const idKonsumen = document.getElementById('id_konsumen').value;
+            const messageDiv = document.getElementById('referral_message');
+
+            if (!kodeReferral) {
+                messageDiv.innerHTML = '<span class="text-red-600">Masukkan kode referral terlebih dahulu</span>';
+                return;
+            }
+
+            if (!idKonsumen) {
+                messageDiv.innerHTML = '<span class="text-red-600">Pilih konsumen terlebih dahulu</span>';
+                return;
+            }
+
+            // Set loading state
+            this.disabled = true;
+            this.textContent = 'Checking...';
+            messageDiv.innerHTML = '<span class="text-gray-600">Memvalidasi kode...</span>';
+
+            // AJAX call to validate referral
+            fetch('{{ route('transaksi.validate-referral') }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute(
+                            'content')
+                    },
+                    body: JSON.stringify({
+                        kode_referral: kodeReferral,
+                        id_konsumen: idKonsumen
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.valid) {
+                        diskonReferral = data.diskon;
+                        messageDiv.innerHTML = '<span class="text-green-600">' + data.message + '</span>';
+                        document.getElementById('kode_referral').value = kodeReferral;
+                    } else {
+                        diskonReferral = 0;
+                        messageDiv.innerHTML = '<span class="text-red-600">' + data.message + '</span>';
+                    }
+                    calculate();
+                })
+                .catch(error => {
+                    diskonReferral = 0;
+                    messageDiv.innerHTML = '<span class="text-red-600">Terjadi kesalahan saat validasi</span>';
+                    calculate();
+                })
+                .finally(() => {
+                    this.disabled = false;
+                    this.textContent = 'Cek';
+                });
+        });
+
+        // Uppercase input referral
+        document.getElementById('kode_referral').addEventListener('input', function() {
+            this.value = this.value.toUpperCase();
+            // Reset diskon jika kode berubah
+            if (diskonReferral > 0) {
+                diskonReferral = 0;
+                document.getElementById('referral_message').innerHTML = '';
+                calculate();
+            }
+        });
+
+        // Init listeners
         document.getElementById('decrement_redeem').addEventListener('click', () => {
             redeemInput.stepDown();
             normalizeRedeem();
@@ -260,6 +378,13 @@
             maxDisplay.textContent = saldo;
             redeemInput.max = saldo;
             normalizeRedeem();
+
+            // Reset referral jika ganti konsumen
+            if (diskonReferral > 0) {
+                diskonReferral = 0;
+                document.getElementById('kode_referral').value = '';
+                document.getElementById('referral_message').innerHTML = '';
+            }
             calculate();
         });
         jasaCheckboxes.forEach(cb => {
@@ -279,7 +404,7 @@
             normalizeRedeem();
             calculate();
         });
-        document.querySelectorAll('#uang_diterima').forEach(el => el.addEventListener('change', calculate));
+        document.getElementById('uang_diterima').addEventListener('input', calculate);
 
         window.addEventListener('load', () => {
             // disable all qty-input di awal

@@ -66,6 +66,12 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('transaksi', TransaksiController::class)->parameters([
         'transaksi' => 'transaksi'
     ]);
+
+    Route::post('transaksi/validate-referral', [TransaksiController::class, 'validateReferral'])
+        ->name('transaksi.validate-referral');
+
+    Route::get('transaksi/{id}/print', [TransaksiController::class, 'print'])
+        ->name('transaksi.print');
     Route::get('transaksi/{id}', [TransaksiController::class, 'show'])
     ->name('transaksi.show');
 Route::get('transaksi/{id}/print', [TransaksiController::class, 'print'])

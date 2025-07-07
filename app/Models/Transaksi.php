@@ -25,6 +25,8 @@ class Transaksi extends Model
         'estimasi_pengerjaan',
         'uang_diterima',        // jumlah uang yang diterima dari konsumen
         'status_pembayaran',       // status pembayaran, misal: 'lunas', 'belum_lunas'
+        'kode_referral_digunakan',  // kode referral yang digunakan di transaksi ini
+        'diskon_referral',          // nominal diskon dari referral
     ];
 
     protected $casts = [
@@ -32,6 +34,8 @@ class Transaksi extends Model
         'estimasi_pengerjaan' => 'string',
         'id_barang'           => 'array',
         'id_jasa'             => 'array',
+        'diskon_referral'     => 'decimal:2',
+
     ];
 
     /**
