@@ -258,10 +258,11 @@ class TransaksiController extends Controller
         $diskonReferral = $transaksi->diskon_referral;
         $kembalian = $transaksi->uang_diterima - $transaksi->total_harga;
         $sisaPoint = $transaksi->konsumen->jumlah_point;
+        $diskon = $diskonPoin + $diskonReferral;
         $konsumenPemberiReferral = $transaksi->konsumenPemberiReferral();
 
         return view('transaksi.show', compact(
-            'transaksi','barangs','jasas',
+            'transaksi','barangs','jasas','diskon',
             'subtotal','diskonPoin','diskonReferral','kembalian','sisaPoint','konsumenPemberiReferral'
         ));
     }
