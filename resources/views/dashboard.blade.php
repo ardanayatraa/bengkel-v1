@@ -238,7 +238,7 @@
                         </a>
 
                         <!-- Total Barang -->
-                        <a href="{{ route('barang.index') }}"
+                        <a href="{{ route('laporan.jual.barang') }}"
                             class="block bg-white border shadow-sm rounded-lg hover:shadow-md transition-shadow">
                             <div class="p-6 flex items-center">
                                 <i
