@@ -281,6 +281,7 @@ class TransaksiController extends Controller
         $diskonReferral = $transaksi->diskon_referral;
         $kembalian = $transaksi->uang_diterima - $transaksi->total_harga;
         $sisaPoint = $transaksi->konsumen->jumlah_point;
+           $diskon = $diskonPoin + $diskonReferral;
         $konsumenPemberiReferral = $transaksi->konsumenPemberiReferral();
 
         // Lebar kertas: 80 mm → poin (1 mm ≈ 2.83465 pt)
@@ -295,7 +296,7 @@ class TransaksiController extends Controller
         $heightPt  = $heightMm * 2.83465;
 
         $pdf = Pdf::loadView('transaksi.print', compact(
-            'transaksi','barangs','jasas',
+            'transaksi','barangs','jasas','diskon',
             'subtotal','diskonPoin','diskonReferral','kembalian','sisaPoint','konsumenPemberiReferral'
         ))
         ->setPaper([0, 0, $widthPt, $heightPt]);
