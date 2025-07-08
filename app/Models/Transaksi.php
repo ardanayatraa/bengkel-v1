@@ -16,15 +16,15 @@ class Transaksi extends Model
         'id_user',
         'id_teknisi',
         'id_konsumen',
-        'id_barang',            // akan di-cast sebagai array
-        'id_jasa',              // akan di-cast sebagai array
+        'id_barang',
+        'id_jasa',
         'tanggal_transaksi',
         'total_harga',
         'metode_pembayaran',
         'status_service',
         'estimasi_pengerjaan',
-        'uang_diterima',        // jumlah uang yang diterima dari konsumen
-        'status_pembayaran',       // status pembayaran, misal: 'lunas', 'belum_lunas'
+        'uang_diterima',
+        'status_pembayaran',
         'kode_referral_digunakan',  // kode referral yang digunakan di transaksi ini
         'diskon_referral',          // nominal diskon dari referral
     ];
@@ -35,7 +35,6 @@ class Transaksi extends Model
         'id_barang'           => 'array',
         'id_jasa'             => 'array',
         'diskon_referral'     => 'decimal:2',
-
     ];
 
     /**
@@ -45,7 +44,6 @@ class Transaksi extends Model
     {
         return $this->belongsTo(Konsumen::class, 'id_konsumen');
     }
-
 
     /**
      * Ambil koleksi Barang dari JSON array id_barang.
@@ -65,27 +63,24 @@ class Transaksi extends Model
 
         return Barang::whereIn('id_barang', $ids)->get();
     }
-/**
- * Ambil koleksi Jasa dari JSON array id_jasa.
- */
-public function jasaModels()
-{
-    // Ambil raw value
-    $ids = $this->id_jasa;
 
-    // Jika null, jadi array kosong
-    if (is_null($ids)) {
-        $ids = [];
+    /**
+     * Ambil koleksi Jasa dari JSON array id_jasa.
+     */
+    public function jasaModels()
+    {
+        $ids = $this->id_jasa;
+
+        if (is_null($ids)) {
+            $ids = [];
+        }
+        elseif (! is_array($ids)) {
+            $decoded = json_decode($ids, true);
+            $ids = is_array($decoded) ? $decoded : [$ids];
+        }
+
+        return \App\Models\Jasa::whereIn('id_jasa', $ids)->get();
     }
-    // Kalau bukan array, coba decode JSON atau bungkus jadi array
-    elseif (! is_array($ids)) {
-        $decoded = json_decode($ids, true);
-        $ids = is_array($decoded) ? $decoded : [$ids];
-    }
-
-    return \App\Models\Jasa::whereIn('id_jasa', $ids)->get();
-}
-
 
     /**
      * Transaksi menghasilkan banyak entri point.
@@ -94,7 +89,6 @@ public function jasaModels()
     {
         return $this->hasMany(Point::class, 'id_transaksi');
     }
-
 
     // Accessor: total poin ditukar untuk transaksi ini
     public function getRedeemedPointsAttribute(): int
@@ -111,6 +105,12 @@ public function jasaModels()
         return intdiv($this->redeemed_points,10) * 10000;
     }
 
+    // Accessor: total diskon (poin + referral)
+    public function getTotalDiscountAttribute(): float
+    {
+        return $this->point_discount + $this->diskon_referral;
+    }
+
     /**
      * Transaksi dikerjakan oleh satu teknisi.
      */
@@ -119,16 +119,12 @@ public function jasaModels()
         return $this->belongsTo(Teknisi::class, 'id_teknisi');
     }
 
-     /**
+    /**
      * Kembalikan koleksi barang beserta qty-nya dari JSON id_barang.
-     *
-     * @return \Illuminate\Support\Collection
      */
     public function barangWithQty()
     {
         $out = collect();
-
-        // Pastikan id_barang sudah berupa array key=>qty
         $arr = $this->id_barang ?: [];
 
         foreach ($arr as $barangId => $qty) {
@@ -146,11 +142,11 @@ public function jasaModels()
         return $out;
     }
 
-   public function kasir()
-{
-    return $this->belongsTo(User::class, 'id_user')
-                ->where('level', 'kasir');
-}
+    public function kasir()
+    {
+        return $this->belongsTo(User::class, 'id_user')
+                    ->where('level', 'kasir');
+    }
 
     /**
      * Accessor: total semua barang di transaksi ini.
@@ -160,4 +156,22 @@ public function jasaModels()
         return $this->barangWithQty()->sum('subtotal');
     }
 
+    /**
+     * Get konsumen pemberi referral jika ada
+     */
+    public function konsumenPemberiReferral()
+    {
+        if ($this->kode_referral_digunakan) {
+            return Konsumen::where('kode_referral', $this->kode_referral_digunakan)->first();
+        }
+        return null;
+    }
+
+    /**
+     * Relasi ke konsumen pemberi referral
+     */
+    public function pemberiReferral()
+    {
+        return $this->belongsTo(Konsumen::class, 'kode_referral_digunakan', 'kode_referral');
+    }
 }
