@@ -19,7 +19,10 @@ class TransaksiTable extends DataTableComponent
 
     public function builder(): Builder
     {
-        return Transaksi::query()->select('transaksis.*');
+        return Transaksi::query()
+            ->select('transaksis.*')
+            ->orderBy('tanggal_transaksi', 'desc')
+            ->orderBy('created_at', 'desc');
     }
 
     public function configure(): void
@@ -93,22 +96,13 @@ class TransaksiTable extends DataTableComponent
                 ->sortable()
                 ->searchable(),
 
-            // Inline select untuk Status Pembayaran
-            Column::make('Status Pembayaran')
-                ->html()
-                ->format(function ($_, $row) {
-                    $options = ['belum bayar', 'lunas'];
-                    $html = '<select wire:change="updatePaymentStatus('
-                        . $row->id_transaksi
-                        . ', $event.target.value)" class="border rounded px-2 py-1 bg-white">';
-                    foreach ($options as $opt) {
-                        $sel = $row->status_pembayaran === $opt ? ' selected' : '';
-                        $html .= "<option value=\"{$opt}\"{$sel}>"
-                            . ucfirst($opt)
-                            . "</option>";
-                    }
-                    return $html . '</select>';
-                }),
+            // Status Pembayaran dengan component bayar-action
+            Column::make('Pembayaran')
+                ->label(fn($row) => view('components.bayar-action', [
+                    'transaksi' => $row,
+                    'modalId' => 'bayar-transaksi-' . $row->id_transaksi,
+                ]))
+                ->html(),
 
             // Inline select untuk Status Service
             Column::make('Status Service')
@@ -158,7 +152,6 @@ class TransaksiTable extends DataTableComponent
         return $columns;
     }
 
-
     /**
      * Update status_service existing method...
      */
@@ -171,14 +164,13 @@ class TransaksiTable extends DataTableComponent
             if ($newStatus === 'diambil') {
                 $k = Konsumen::find($t->id_konsumen);
                 $k->increment('jumlah_point', 1);
-
             }
         }
         $this->dispatch('refreshDatatable');
     }
 
     /**
-     * NEW: Update status_pembayaran
+     * Update status_pembayaran (kept for backward compatibility)
      */
     public function updatePaymentStatus(int $id, string $newStatus): void
     {
@@ -187,6 +179,32 @@ class TransaksiTable extends DataTableComponent
             $t->status_pembayaran = $newStatus;
             $t->save();
         }
+        $this->dispatch('refreshDatatable');
+    }
+
+    /**
+     * Method untuk proses pembayaran (dipanggil dari component bayar-action)
+     */
+    public function processPayment(int $id, float $uangDiterima, float $kembalian): void
+    {
+        $transaksi = Transaksi::find($id);
+
+        if ($transaksi && $transaksi->status_pembayaran === 'belum bayar') {
+            // Validasi uang diterima tidak boleh kurang dari total harga
+            if ($uangDiterima < $transaksi->total_harga) {
+                session()->flash('error', 'Uang yang diterima kurang dari total harga');
+                return;
+            }
+
+            $transaksi->update([
+                'status_pembayaran' => 'lunas',
+                'uang_diterima' => $uangDiterima,
+                'kembalian' => $kembalian,
+            ]);
+
+            session()->flash('success', 'Pembayaran berhasil diproses');
+        }
+
         $this->dispatch('refreshDatatable');
     }
 }

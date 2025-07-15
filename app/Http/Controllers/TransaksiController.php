@@ -313,4 +313,24 @@ class TransaksiController extends Controller
             ->route('transaksi.index')
             ->with('success', 'Transaksi berhasil dihapus.');
     }
+
+     public function prosesBayar(Request $request, $id)
+    {
+        $transaksi = Transaksi::findOrFail($id);
+
+        $request->validate([
+            'uang_diterima' => 'required|numeric|min:' . $transaksi->total_harga,
+        ]);
+
+        $uangDiterima = $request->input('uang_diterima');
+        $kembalian = $uangDiterima - $transaksi->total_harga;
+
+        $transaksi->update([
+            'status_pembayaran' => 'lunas',
+            'uang_diterima'     => $uangDiterima,
+            'kembalian'         => $kembalian,
+        ]);
+
+        return redirect()->back()->with('success', 'Pembayaran berhasil diproses.');
+    }
 }

@@ -70,12 +70,12 @@ Route::middleware(['auth'])->group(function () {
     Route::post('transaksi/validate-referral', [TransaksiController::class, 'validateReferral'])
         ->name('transaksi.validate-referral');
 
-    Route::get('transaksi/{id}/print', [TransaksiController::class, 'print'])
-        ->name('transaksi.print');
-    Route::get('transaksi/{id}', [TransaksiController::class, 'show'])
-    ->name('transaksi.show');
-Route::get('transaksi/{id}/print', [TransaksiController::class, 'print'])
-    ->name('transaksi.print');
+Route::prefix('transaksi/{id}')->group(function () {
+    Route::post('/bayar', [TransaksiController::class, 'prosesBayar'])->name('transaksi.bayar');
+    Route::get('/print', [TransaksiController::class, 'print'])->name('transaksi.print');
+    Route::get('/', [TransaksiController::class, 'show'])->name('transaksi.show');
+});
+
 
     Route::resource('trx-barang-masuk', TrxBarangMasukController::class)->parameters([
         'trx-barang-masuk' => 'trx_barang_masuk'
