@@ -20,13 +20,13 @@ class DashboardController extends Controller
 
         if ($user->level === 'kasir') {
             // Data Keseluruhan
-            $transaksiCount = Transaksi::count();
+            $transaksiCount = Transaksi::where('status_pembayaran','lunas')->count();
             $konsumenCount = Konsumen::count();
             $barangCount = Barang::count();
             $pendapatanTotal = Transaksi::sum('total_harga');
 
             // Data Hari Ini
-            $transaksiTodayCount = Transaksi::whereDate('tanggal_transaksi', $today)->count();
+            $transaksiTodayCount = Transaksi::where('status_pembayaran','lunas')->whereDate('tanggal_transaksi', $today)->count();
             $konsumenTodayCount = Konsumen::whereDate('created_at', $today)->count();
             $serviceTotalToday = Transaksi::whereDate('tanggal_transaksi', $today)
                 ->whereJsonLength('id_jasa', '>', 0)
