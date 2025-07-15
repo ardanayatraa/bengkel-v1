@@ -54,15 +54,15 @@ class DashboardController extends Controller
         $userCount = User::count();
         $konsumenCount = Konsumen::count();
         $barangCount = Barang::count();
-        $pendapatanTotal = Transaksi::sum('total_harga');
+        $pendapatanTotal = Transaksi::where('status_pembayaran','lunas')->sum('total_harga');
 
         // Data Hari Ini untuk Admin
-        $transaksiTodayCount = Transaksi::whereDate('tanggal_transaksi', $today)->count();
+        $transaksiTodayCount = Transaksi::where('status_pembayaran','lunas')->whereDate('tanggal_transaksi', $today)->count();
         $barangMasukTodayCount = TrxBarangMasuk::whereDate('created_at', $today)->count();
         $serviceTotalToday = Transaksi::whereDate('tanggal_transaksi', $today)
             ->whereJsonLength('id_jasa', '>', 0)
             ->sum('total_harga');
-        $pendapatanTodayTotal = Transaksi::whereDate('tanggal_transaksi', $today)
+        $pendapatanTodayTotal = Transaksi::where('status_pembayaran','lunas')->whereDate('tanggal_transaksi', $today)
             ->sum('total_harga');
 
         return view('dashboard', compact(
