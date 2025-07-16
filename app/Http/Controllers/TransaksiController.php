@@ -50,119 +50,125 @@ class TransaksiController extends Controller
     }
 
     public function store(Request $request)
-    {
-        $v = $request->validate([
-            'id_konsumen'         => 'required|exists:konsumens,id_konsumen',
-            'id_teknisi'          => 'nullable|exists:teknisis,id_teknisi',
-            'id_barang'           => 'nullable|array',
-            'id_barang.*'         => 'exists:barangs,id_barang',
-            'qty_barang.*'        => 'integer|min:1',
-            'id_jasa'             => 'nullable|array',
-            'id_jasa.*'           => 'exists:jasas,id_jasa',
-            'tanggal_transaksi'   => 'required|date',
-            'metode_pembayaran'   => 'required|string',
-            'status_service'      => 'required|in:proses,selesai,diambil',
-            'estimasi_pengerjaan' => 'nullable|string|max:191',
-            'uang_diterima'       => 'required|numeric|min:0',
-            'redeem_points'       => 'nullable|integer|min:0',
-            'kode_referral'       => 'nullable|string|max:10', // tambahan untuk referral
-        ]);
+{
+    $v = $request->validate([
+        'id_konsumen'         => 'required|exists:konsumens,id_konsumen',
+        'id_teknisi'          => 'nullable|exists:teknisis,id_teknisi',
+        'id_barang'           => 'nullable|array',
+        'id_barang.*'         => 'exists:barangs,id_barang',
+        'qty_barang.*'        => 'integer|min:1',
+        'id_jasa'             => 'nullable|array',
+        'id_jasa.*'           => 'exists:jasas,id_jasa',
+        'tanggal_transaksi'   => 'required|date',
+        'metode_pembayaran'   => 'required|string',
+        'status_service'      => 'required|in:proses,selesai,diambil',
+        'estimasi_pengerjaan' => 'nullable|string|max:191',
+        'uang_diterima'       => 'required|numeric|min:0',
+        'redeem_points'       => 'nullable|integer|min:0',
+        'kode_referral'       => 'nullable|string|max:10',
+    ]);
 
-        $konsumen = Konsumen::findOrFail($v['id_konsumen']);
+    $konsumen = Konsumen::findOrFail($v['id_konsumen']);
 
-        // Build JSON barang=>qty
-        $barangJson = [];
-        foreach ($v['id_barang'] ?? [] as $id) {
-            $barangJson[$id] = $v['qty_barang'][$id] ?? 1;
-        }
-
-        // Hitung total barang
-        $totalBarang = 0;
-        foreach ($barangJson as $id => $qty) {
-            $harga = Barang::findOrFail($id)->harga_jual;
-            $totalBarang += $harga * $qty;
-        }
-
-        // Hitung total jasa
-        $totalJasa = collect($v['id_jasa'] ?? [])
-            ->map(fn($i) => Jasa::findOrFail($i)->harga_jasa)
-            ->sum();
-
-        // Subtotal sebelum diskon
-        $subtotal = $totalBarang + $totalJasa;
-
-        // Hitung diskon poin: 10pt → Rp10.000
-        $diskonPoin = 0;
-        if (
-            strtolower($konsumen->keterangan) === 'member'
-            && !empty($v['redeem_points'])
-            && $v['redeem_points'] <= $konsumen->jumlah_point
-            && $v['redeem_points'] % 10 === 0
-        ) {
-            $diskonPoin = ($v['redeem_points'] / 10) * 10000;
-            $konsumen->decrement('jumlah_point', $v['redeem_points']);
-        }
-
-        // Proses kode referral
-        $diskonReferral = 0;
-        $kodeReferralDigunakan = null;
-        $konsumenPemberiReferral = null;
-
-        if (!empty($v['kode_referral'])) {
-            $validation = Konsumen::validateKodeReferral($v['kode_referral'], $konsumen->id_konsumen);
-
-            if ($validation['valid']) {
-                $diskonReferral = $validation['diskon'];
-                $kodeReferralDigunakan = $v['kode_referral'];
-                $konsumenPemberiReferral = $validation['konsumen_pemberi'];
-
-                // Tandai bahwa konsumen ini sudah menggunakan kode referral tersebut
-                $konsumen->tandaiReferralDigunakan($v['kode_referral']);
-            }
-        }
-
-        // Total akhir setelah semua diskon
-        $total = max(0, $subtotal - $diskonPoin - $diskonReferral);
-
-        // Simpan transaksi
-        $transaksi = Transaksi::create([
-            'id_konsumen'              => $v['id_konsumen'],
-            'id_teknisi'               => $v['id_teknisi'] ?? null,
-            'id_barang'                => $barangJson,
-            'id_jasa'                  => $v['id_jasa'] ?? [],
-            'tanggal_transaksi'        => $v['tanggal_transaksi'],
-            'metode_pembayaran'        => $v['metode_pembayaran'],
-            'status_service'           => $v['status_service'],
-            'estimasi_pengerjaan'      => $v['estimasi_pengerjaan'] ?? null,
-            'total_harga'              => $total,
-            'uang_diterima'            => $v['uang_diterima'],
-            'id_user'                  => Auth::id(),
-            'kode_referral_digunakan'  => $kodeReferralDigunakan,
-            'diskon_referral'          => $diskonReferral,
-        ]);
-
-        // Tambah poin baru untuk member yang melakukan jasa
-        if (
-            strtolower($konsumen->keterangan) === 'member'
-            && !empty($v['id_jasa'])
-        ) {
-            Point::create([
-                'id_konsumen'  => $konsumen->id_konsumen,
-                'id_transaksi' => $transaksi->id_transaksi,
-                'tanggal'      => now()->toDateString(),
-                'jumlah_point' => 1,
-            ]);
-            $konsumen->increment('jumlah_point', 1);
-        }
-
-        // Berikan poin reward untuk pemberi kode referral (langsung increment tanpa Point model)
-        if ($konsumenPemberiReferral) {
-            $konsumenPemberiReferral->increment('jumlah_point', 1);
-        }
-
-        return redirect()->route('transaksi.index')
-                         ->with('success','Transaksi berhasil disimpan.');
+    // Build JSON barang=>qty
+    $barangJson = [];
+    foreach ($v['id_barang'] ?? [] as $id) {
+        $barangJson[$id] = $v['qty_barang'][$id] ?? 1;
     }
+
+    // Hitung total barang
+    $totalBarang = 0;
+    foreach ($barangJson as $id => $qty) {
+        $harga = Barang::findOrFail($id)->harga_jual;
+        $totalBarang += $harga * $qty;
+    }
+
+    // Hitung total jasa
+    $totalJasa = collect($v['id_jasa'] ?? [])
+        ->map(fn($i) => Jasa::findOrFail($i)->harga_jasa)
+        ->sum();
+
+    // Subtotal sebelum diskon
+    $subtotal = $totalBarang + $totalJasa;
+
+    // Hitung diskon poin: 10pt → Rp10.000
+    $diskonPoin = 0;
+    if (
+        strtolower($konsumen->keterangan) === 'member'
+        && !empty($v['redeem_points'])
+        && $v['redeem_points'] <= $konsumen->jumlah_point
+        && $v['redeem_points'] % 10 === 0
+    ) {
+        $diskonPoin = ($v['redeem_points'] / 10) * 10000;
+        $konsumen->decrement('jumlah_point', $v['redeem_points']);
+    }
+
+    // Proses kode referral
+    $diskonReferral = 0;
+    $kodeReferralDigunakan = null;
+    $konsumenPemberiReferral = null;
+
+    if (!empty($v['kode_referral'])) {
+        $validation = Konsumen::validateKodeReferral($v['kode_referral'], $konsumen->id_konsumen);
+
+        if ($validation['valid']) {
+            $diskonReferral = $validation['diskon'];
+            $kodeReferralDigunakan = $v['kode_referral'];
+            $konsumenPemberiReferral = $validation['konsumen_pemberi'];
+
+            // Tandai bahwa konsumen ini sudah menggunakan kode referral tersebut
+            $konsumen->tandaiReferralDigunakan($v['kode_referral']);
+        }
+    }
+
+    // Total akhir setelah semua diskon
+    $total = max(0, $subtotal - $diskonPoin - $diskonReferral);
+
+    // PERBAIKAN: Tentukan status pembayaran dan hitung kembalian
+    $uangDiterima = $v['uang_diterima'];
+    $statusPembayaran = $uangDiterima >= $total ? 'lunas' : 'belum bayar';
+    $kembalian = $uangDiterima >= $total ? $uangDiterima - $total : 0;
+
+    // Simpan transaksi
+    $transaksi = Transaksi::create([
+        'id_konsumen'              => $v['id_konsumen'],
+        'id_teknisi'               => $v['id_teknisi'] ?? null,
+        'id_barang'                => $barangJson,
+        'id_jasa'                  => $v['id_jasa'] ?? [],
+        'tanggal_transaksi'        => $v['tanggal_transaksi'],
+        'metode_pembayaran'        => $v['metode_pembayaran'],
+        'status_service'           => $v['status_service'],
+        'estimasi_pengerjaan'      => $v['estimasi_pengerjaan'] ?? null,
+        'total_harga'              => $total,
+        'uang_diterima'            => $uangDiterima,
+        'status_pembayaran'        => $statusPembayaran,  // TAMBAHAN INI
+        'id_user'                  => Auth::id(),
+        'kode_referral_digunakan'  => $kodeReferralDigunakan,
+        'diskon_referral'          => $diskonReferral,
+    ]);
+
+    // Tambah poin baru untuk member yang melakukan jasa
+    if (
+        strtolower($konsumen->keterangan) === 'member'
+        && !empty($v['id_jasa'])
+    ) {
+        Point::create([
+            'id_konsumen'  => $konsumen->id_konsumen,
+            'id_transaksi' => $transaksi->id_transaksi,
+            'tanggal'      => now()->toDateString(),
+            'jumlah_point' => 1,
+        ]);
+        $konsumen->increment('jumlah_point', 1);
+    }
+
+    // Berikan poin reward untuk pemberi kode referral (langsung increment tanpa Point model)
+    if ($konsumenPemberiReferral) {
+        $konsumenPemberiReferral->increment('jumlah_point', 1);
+    }
+
+    return redirect()->route('transaksi.index')
+                     ->with('success','Transaksi berhasil disimpan.');
+}
 
     public function edit($id)
     {

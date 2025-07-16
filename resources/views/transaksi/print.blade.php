@@ -223,8 +223,8 @@
 
             @if ($diskon > 0)
                 <div class="total-row">
-                    <span>Diskon (10 poin):</span>
-                    <span>-Rp {{ number_format($diskon, 0, ',', '.') }}</span>
+                    <span>Diskon :</span>
+                    <span>- Rp {{ number_format($diskon, 0, ',', '.') }}</span>
                 </div>
             @endif
 
