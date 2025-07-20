@@ -12,14 +12,9 @@ class Barang extends Model
     protected $table = 'barangs';
     protected $primaryKey = 'id_barang';
     protected $fillable = [
-        'id_supplier', 'id_kategori', 'nama_barang',
+        'id_supplier', 'nama_barang',
         'harga_beli', 'harga_jual', 'stok', 'keterangan'
     ];
-
-    public function kategori()
-    {
-        return $this->belongsTo(Kategori::class, 'id_kategori');
-    }
 
     public function supplier()
     {

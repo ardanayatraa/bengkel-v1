@@ -189,4 +189,5 @@ class LaporanBarangController extends Controller
 
         return $keluar1; // Choose the method that works best
     }
+
 }

@@ -113,7 +113,7 @@
             <thead>
                 <tr>
                     <th>Barang</th>
-                    <th>Kategori</th>
+
                     <th>Stok Awal</th>
                     <th>Masuk</th>
                     <th>Keluar</th>
@@ -124,7 +124,7 @@
                 @foreach ($page as $s)
                     <tr>
                         <td>{{ $s->barang->nama_barang }}</td>
-                        <td>{{ $s->barang->kategori?->nama_kategori ?? '-' }}</td>
+
                         <td>{{ $s->stok_awal }}</td>
                         <td>{{ $s->masuk }}</td>
                         <td>{{ $s->keluar }}</td>
@@ -135,7 +135,7 @@
             @if ($i + 1 === $chunks->count())
                 <tfoot>
                     <tr>
-                        <td colspan="2" style="text-align:right;">TOTAL:</td>
+                        <td colspan="1" style="text-align:right;">TOTAL:</td>
                         <td>{{ $totalStokAwal }}</td>
                         <td>{{ $totalMasuk }}</td>
                         <td>{{ $totalKeluar }}</td>

@@ -9,15 +9,7 @@
                 <input type="text" name="search" value="{{ $search }}" placeholder="Cari nama/no polisi..."
                     class="px-4 py-2 border rounded w-64">
 
-                {{-- Pilih kategori --}}
-                <select name="category" class="px-3 py-2 border rounded">
-                    <option value="">Semua Kategori</option>
-                    @foreach ($categories as $cat)
-                        <option value="{{ $cat->id_kategori }}" {{ $category == $cat->id_kategori ? 'selected' : '' }}>
-                            {{ $cat->nama_kategori }}
-                        </option>
-                    @endforeach
-                </select>
+
 
                 {{-- Rentang tanggal --}}
                 <input type="date" name="start_date" value="{{ $start }}" class="px-3 py-2 border rounded">
@@ -70,7 +62,7 @@
                         <th class="px-4 py-2">Kasir</th>
                         <th class="px-4 py-2">Pelanggan</th>
                         <th class="px-4 py-2">No Polisi</th>
-                        <th class="px-4 py-2">Kategori</th>
+
                         <th class="px-4 py-2">Barang (qty &amp; subtotal)</th>
                         <th class="px-4 py-2">Tanggal</th>
                         <th class="px-4 py-2">Total</th>
@@ -84,10 +76,7 @@
                             <td class="px-4 py-2">{{ $trx->kasir->nama_user ?? '-' }}</td>
                             <td class="px-4 py-2">{{ $trx->konsumen->nama_konsumen ?? '-' }}</td>
                             <td class="px-4 py-2">{{ $trx->konsumen->no_kendaraan ?? '-' }}</td>
-                            <td class="px-4 py-2">
-                                @php $first = $trx->barangWithQty()->first(); @endphp
-                                {{ $first?->model->kategori?->nama_kategori ?? '-' }}
-                            </td>
+
                             <td class="px-4 py-2">
                                 @foreach ($trx->barangWithQty() as $b)
                                     <div>
@@ -104,14 +93,14 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="9" class="py-8 text-center text-gray-400">Tidak ada data.</td>
+                            <td colspan="8" class="py-8 text-center text-gray-400">Tidak ada data.</td>
                         </tr>
                     @endforelse
                 </tbody>
                 @if ($transaksis->count())
                     <tfoot class="bg-gray-50">
                         <tr>
-                            <td colspan="7" class="text-right px-4 py-3 font-medium">Total:</td>
+                            <td colspan="6" class="text-right px-4 py-3 font-medium">Total:</td>
                             <td class="px-4 py-3 font-semibold">
                                 Rp {{ number_format($totalFiltered, 0, ',', '.') }}
                             </td>

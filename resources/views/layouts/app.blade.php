@@ -253,21 +253,7 @@
                                 </a>
                             </li>
 
-                            {{-- Kategori --}}
-                            <li class="relative">
-                                <a href="/kategori"
-                                    class="flex items-center px-4 py-3 {{ request()->is('kategori*') ? 'text-red-800 bg-white' : 'text-gray-800' }} rounded-md relative z-10">
-                                    <div
-                                        class="p-1.5 rounded-full mr-3 {{ request()->is('kategori*') ? 'bg-red-700' : 'bg-gray-400' }}">
-                                        <svg class="w-4 h-4 {{ request()->is('kategori*') ? 'text-white' : 'text-gray-800' }}"
-                                            fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M4 6h16M4 10h16M4 14h16M4 18h16" />
-                                        </svg>
-                                    </div>
-                                    <span class="font-medium">Kategori</span>
-                                </a>
-                            </li>
+
 
                             {{-- Jasa --}}
                             <li class="relative">

@@ -18,7 +18,7 @@ class BarangTable extends DataTableComponent
     // Eager load relasi untuk mencegah N+1 problem
     public function query()
     {
-        return Barang::query()->with(['supplier', 'kategori']);
+        return Barang::query()->with(['supplier']);
     }
 
     public function columns(): array
@@ -28,10 +28,6 @@ class BarangTable extends DataTableComponent
 
             // Tampilkan nama supplier, bukan id
             Column::make("Supplier", "supplier.nama_supplier")
-                ->sortable(),
-
-            // Tampilkan nama kategori, bukan id
-            Column::make("Kategori", "kategori.nama_kategori")
                 ->sortable(),
 
             Column::make("Nama Barang", "nama_barang")->sortable(),

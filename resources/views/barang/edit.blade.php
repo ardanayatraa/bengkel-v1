@@ -33,21 +33,7 @@
                                 @endforeach
                             </select>
                         </div>
-                        <div>
-                            <label for="id_kategori"
-                                class="block font-medium text-gray-700 dark:text-gray-300 mb-2">Kategori</label>
-                            <select id="id_kategori" name="id_kategori"
-                                class="block w-full border border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:ring-2 focus:ring-red-500 focus:border-red-500 rounded-lg p-2 transition"
-                                required>
-                                <option value="">Pilih Kategori</option>
-                                @foreach ($kategoris as $kategori)
-                                    <option value="{{ $kategori->id_kategori }}"
-                                        {{ $barang->id_kategori == $kategori->id_kategori ? 'selected' : '' }}>
-                                        {{ $kategori->nama_kategori }}
-                                    </option>
-                                @endforeach
-                            </select>
-                        </div>
+
                         <div>
                             <label for="harga_beli"
                                 class="block font-medium text-gray-700 dark:text-gray-300 mb-2">Harga Beli</label>

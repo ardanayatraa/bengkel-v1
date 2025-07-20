@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\Barang;
-use App\Models\Kategori;
 use App\Models\Supplier;
 use Illuminate\Http\Request;
 
@@ -18,16 +17,14 @@ class BarangController extends Controller
     public function create()
     {
         $suppliers = Supplier::all();
-        $kategoris = Kategori::all();
         $barangs = Barang::all();
-        return view('barang.create', compact('suppliers', 'kategoris', 'barangs'));
+        return view('barang.create', compact('suppliers', 'barangs'));
     }
 
     public function store(Request $request)
     {
         $validatedData = $request->validate([
             'id_supplier' => 'required|integer|exists:suppliers,id_supplier',
-            'id_kategori' => 'required|integer|exists:kategoris,id_kategori',
             'nama_barang' => 'required|string|max:255',
             'harga_beli' => 'required|numeric',
             'harga_jual' => 'required|numeric',
@@ -43,15 +40,13 @@ class BarangController extends Controller
     {
         $barang = Barang::findOrFail($id);
         $suppliers = Supplier::all();
-        $kategoris = Kategori::all();
-        return view('barang.edit', compact('barang', 'suppliers', 'kategoris'));
+        return view('barang.edit', compact('barang', 'suppliers'));
     }
 
     public function update(Request $request, string $id)
     {
         $validatedData = $request->validate([
             'id_supplier' => 'required|integer|exists:suppliers,id_supplier',
-            'id_kategori' => 'required|integer|exists:kategoris,id_kategori',
             'nama_barang' => 'required|string|max:255',
             'harga_beli' => 'required|numeric',
             'harga_jual' => 'required|numeric',

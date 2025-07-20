@@ -115,7 +115,7 @@
                     <th>Kasir</th>
                     <th>Pelanggan</th>
                     <th>No Polisi</th>
-                    <th>Kategori</th>
+
                     <th>Barang (qty & subtotal)</th>
                     <th>Tanggal</th>
                     <th>Total</th>
@@ -129,10 +129,7 @@
                         <td>{{ $trx->kasir->nama_user ?? '-' }}</td>
                         <td>{{ $trx->konsumen->nama_konsumen ?? '-' }}</td>
                         <td>{{ $trx->konsumen->no_kendaraan ?? '-' }}</td>
-                        <td>
-                            @php $first = $trx->barangWithQty()->first(); @endphp
-                            {{ $first?->model->kategori?->nama_kategori ?? '-' }}
-                        </td>
+
                         <td>
                             @foreach ($trx->barangWithQty() as $b)
                                 {{ $b->model->nama_barang }}×{{ $b->qty }}
@@ -148,7 +145,7 @@
             @if ($i + 1 === $chunks->count())
                 <tfoot>
                     <tr>
-                        <td colspan="7" style="text-align:right;">Total (terfilter):</td>
+                        <td colspan="6" style="text-align:right;">Total (terfilter):</td>
                         <td>Rp {{ number_format($totalFiltered, 0, ',', '.') }}</td>
                         <td></td>
                     </tr>

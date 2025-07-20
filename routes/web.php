@@ -6,7 +6,6 @@ use App\Http\Controllers\{
     DashboardController,
     DetailTransaksiController,
     JasaController,
-    KategoriController,
     KonsumenController,
     LaporanBarangController,
     LaporanJasaController,
@@ -41,9 +40,7 @@ Route::middleware(['auth'])->group(function () {
         'jasa' => 'jasa'
     ]);
 
-    Route::resource('kategori', KategoriController::class)->parameters([
-        'kategori' => 'kategori'
-    ]);
+
 
     Route::resource('konsumen', KonsumenController::class)->parameters([
         'konsumen' => 'konsumen'

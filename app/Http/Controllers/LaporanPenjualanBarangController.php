@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Transaksi;
 use App\Models\Barang;
-use App\Models\Kategori;
 use Barryvdh\DomPDF\Facade\Pdf;
 
 class LaporanPenjualanBarangController extends Controller
@@ -17,8 +16,7 @@ class LaporanPenjualanBarangController extends Controller
         $search    = $request->input('search');
         $category  = $request->input('category');
 
-        // Untuk dropdown kategori
-        $categories = Kategori::orderBy('nama_kategori')->get();
+
 
         // Base query: hanya Transaksi yang punya id_barang JSON non-empty
         $base = Transaksi::with(['konsumen','kasir'])
@@ -42,19 +40,7 @@ class LaporanPenjualanBarangController extends Controller
                   ->orWhere('no_kendaraan','like',"%{$search}%");
             });
         }
-        if ($category) {
-            // Ambil semua ID barang di kategori ini
-            $barangIds = Barang::where('id_kategori',$category)
-                ->pluck('id_barang')
-                ->toArray();
 
-            // Filter transaksi yang JSON id_barang memiliki salah satu key tersebut
-            $filtered->where(function($q) use($barangIds){
-                foreach ($barangIds as $bid) {
-                    $q->orWhereRaw("JSON_EXTRACT(id_barang, '$.\"{$bid}\"') IS NOT NULL");
-                }
-            });
-        }
 
         // Hitung total setelah filter
         $totalFiltered = $filtered->get()->sum->calculated_total;
@@ -66,7 +52,7 @@ class LaporanPenjualanBarangController extends Controller
 
         return view('laporan.jual-barang.index', compact(
             'transaksis','start','end','search','category',
-            'categories','totalAll','totalFiltered'
+            'totalAll','totalFiltered'
         ));
     }
 
@@ -92,16 +78,7 @@ class LaporanPenjualanBarangController extends Controller
                   ->orWhere('no_kendaraan','like',"%{$search}%");
             });
         }
-        if ($category) {
-            $barangIds = Barang::where('id_kategori',$category)
-                ->pluck('id_barang')
-                ->toArray();
-            $base->where(function($q) use($barangIds){
-                foreach ($barangIds as $bid) {
-                    $q->orWhereRaw("JSON_EXTRACT(id_barang, '$.\"{$bid}\"') IS NOT NULL");
-                }
-            });
-        }
+
 
         $transaksis    = $base->orderByDesc('tanggal_transaksi')->get();
         $totalFiltered = $transaksis->sum->calculated_total;
