@@ -15,7 +15,8 @@ use App\Http\Controllers\{
     TeknisiController,
     TransaksiController,
     TrxBarangMasukController,
-    UserController
+    UserController,
+    GajiTeknisiController
 };
 
 
@@ -66,6 +67,22 @@ Route::middleware(['auth'])->group(function () {
 
     Route::post('transaksi/validate-referral', [TransaksiController::class, 'validateReferral'])
         ->name('transaksi.validate-referral');
+
+    Route::resource('gaji-teknisi', GajiTeknisiController::class)->parameters([
+        'gaji-teknisi' => 'gaji_teknisi'
+    ]);
+
+    Route::post('gaji-teknisi/bayar/{id}', [GajiTeknisiController::class, 'bayarGaji'])
+        ->name('gaji-teknisi.bayar');
+
+    Route::post('gaji-teknisi/bayar-semua', [GajiTeknisiController::class, 'bayarSemuaGaji'])
+        ->name('gaji-teknisi.bayar-semua');
+
+    Route::post('gaji-teknisi/generate-otomatis', [GajiTeknisiController::class, 'generateGajiOtomatis'])
+        ->name('gaji-teknisi.generate-otomatis');
+
+    Route::get('gaji-teknisi/laporan', [GajiTeknisiController::class, 'laporan'])
+        ->name('gaji-teknisi.laporan');
 
 Route::prefix('transaksi/{id}')->group(function () {
     Route::post('/bayar', [TransaksiController::class, 'prosesBayar'])->name('transaksi.bayar');

@@ -23,18 +23,41 @@ class KonsumenController extends Controller
         $validatedData = $request->validate([
             'nama_konsumen' => 'required|string|max:255',
             'no_kendaraan' => 'nullable|string|max:50',
-            'no_telp' => 'required|string|max:20',
-            'alamat' => 'required|string',
+            'no_telp' => 'nullable|string|max:20',
+            'alamat' => 'nullable|string',
             'jumlah_point' => 'nullable|integer',
             'keterangan' => 'nullable|string',
+            'email' => 'nullable|email',
+            'kode_referral' => 'nullable|string|max:10|unique:konsumens,kode_referral',
         ]);
+
+        // Set default values
+        $validatedData['jumlah_point'] = $validatedData['jumlah_point'] ?? 0;
+        $validatedData['keterangan'] = $validatedData['keterangan'] ?? '';
 
         // Auto generate kode referral jika konsumen adalah member
         if (strtolower($validatedData['keterangan'] ?? '') === 'member') {
             $validatedData['kode_referral'] = $this->generateKodeReferral($validatedData['nama_konsumen']);
         }
 
-        Konsumen::create($validatedData);
+        $konsumen = Konsumen::create($validatedData);
+
+        // Jika ada parameter return_to, redirect ke halaman tersebut
+        if ($request->has('return_to')) {
+            return redirect($request->get('return_to'))
+                ->with('success', 'Konsumen berhasil ditambahkan!')
+                ->with('new_konsumen_id', $konsumen->id_konsumen);
+        }
+
+        // Jika request AJAX, kembalikan JSON response
+        if ($request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Konsumen berhasil ditambahkan',
+                'konsumen' => $konsumen
+            ]);
+        }
+
         return redirect()->route('konsumen.index')->with('success', 'Konsumen created successfully.');
     }
 
@@ -48,14 +71,20 @@ class KonsumenController extends Controller
     {
         $validatedData = $request->validate([
             'nama_konsumen' => 'required|string|max:255',
-            'no_kendaraan' => 'required|string|max:50',
-            'no_telp' => 'required|string|max:20',
-            'alamat' => 'required|string',
+            'no_kendaraan' => 'nullable|string|max:50',
+            'no_telp' => 'nullable|string|max:20',
+            'alamat' => 'nullable|string',
             'jumlah_point' => 'nullable|integer',
             'keterangan' => 'nullable|string',
+            'email' => 'nullable|email',
+            'kode_referral' => 'nullable|string|max:10|unique:konsumens,kode_referral,' . $id . ',id_konsumen',
         ]);
 
         $konsumen = Konsumen::findOrFail($id);
+
+        // Set default values
+        $validatedData['jumlah_point'] = $validatedData['jumlah_point'] ?? 0;
+        $validatedData['keterangan'] = $validatedData['keterangan'] ?? '';
 
         // Jika berubah jadi member dan belum ada kode referral
         if (strtolower($validatedData['keterangan'] ?? '') === 'member' && empty($konsumen->kode_referral)) {

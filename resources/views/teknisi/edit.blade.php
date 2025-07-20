@@ -35,6 +35,20 @@
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                         @enderror
                     </div>
+
+                    <div>
+                        <label for="persentase_gaji" class="block font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            Persentase Gaji (%)
+                        </label>
+                        <input type="number" id="persentase_gaji" name="persentase_gaji" 
+                               value="{{ old('persentase_gaji', $teknisi->persentase_gaji) }}" step="0.01" min="0" max="100"
+                            class="block w-full border border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200
+                     focus:ring-2 focus:ring-red-500 focus:border-red-500 rounded-lg p-2 transition">
+                        <p class="mt-1 text-sm text-gray-500">Persentase gaji dari harga jasa yang dikerjakan</p>
+                        @error('persentase_gaji')
+                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
+                    </div>
                 </div>
 
                 <div class="mt-6 flex justify-end gap-4">

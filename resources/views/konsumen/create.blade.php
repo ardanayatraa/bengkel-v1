@@ -9,6 +9,9 @@
             <div class="bg-white border dark:bg-gray-800 sm:rounded-lg p-6">
                 <form action="{{ route('konsumen.store') }}" method="POST">
                     @csrf
+                    @if(request('return_to'))
+                        <input type="hidden" name="return_to" value="{{ request('return_to') }}">
+                    @endif
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
                             <label for="nama_konsumen"
@@ -29,6 +32,12 @@
                             <label for="no_telp" class="block font-medium text-gray-700 dark:text-gray-300 mb-2">No
                                 Telepon</label>
                             <input type="text" id="no_telp" name="no_telp"
+                                class="block w-full border border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 rounded-lg p-2 transition">
+                        </div>
+
+                        <div>
+                            <label for="email" class="block font-medium text-gray-700 dark:text-gray-300 mb-2">Email</label>
+                            <input type="email" id="email" name="email"
                                 class="block w-full border border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 rounded-lg p-2 transition">
                         </div>
 
@@ -61,7 +70,7 @@
                     </div>
 
                     <div class="mt-6 flex justify-between">
-                        <a href="{{ route('konsumen.index') }}"
+                        <a href="{{ request('return_to', route('konsumen.index')) }}"
                             class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition">Batal</a>
                         <button type="submit"
                             class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition">Simpan</button>

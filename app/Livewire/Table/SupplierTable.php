@@ -18,8 +18,12 @@ class SupplierTable extends DataTableComponent
     public function columns(): array
     {
         return [
-            Column::make("Id supplier", "id_supplier")
-                ->sortable(),
+            Column::make("No", "id_supplier")
+                ->format(function($value, $row, $column) {
+                    static $counter = 0;
+                    $counter++;
+                    return $counter;
+                }),
             Column::make("Nama supplier", "nama_supplier")
                 ->sortable(),
             Column::make("No telp", "no_telp")

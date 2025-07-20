@@ -55,12 +55,12 @@ class TrxBarangMasukTable extends DataTableComponent
     public function columns(): array
     {
         return [
-            Column::make("ID Transaksi Masuk", "id_trx_barang_masuk")
-                ->sortable()
-                ->format(fn($value) =>
-                    '<a href="'.route('trx-barang-masuk.show', $value).'" class="text-blue-600 hover:underline">'.$value.'</a>'
-                )
-                ->html(),
+            Column::make("No", "id_trx_barang_masuk")
+                ->format(function($value, $row, $column) {
+                    static $counter = 0;
+                    $counter++;
+                    return $counter;
+                }),
 
             Column::make("Barang", "barang.nama_barang")
                 ->sortable(),

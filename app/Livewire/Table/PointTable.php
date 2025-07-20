@@ -18,8 +18,12 @@ class PointTable extends DataTableComponent
     public function columns(): array
     {
         return [
-            Column::make("Id point", "id_point")
-                ->sortable(),
+            Column::make("No", "id_point")
+                ->format(function($value, $row, $column) {
+                    static $counter = 0;
+                    $counter++;
+                    return $counter;
+                }),
             Column::make("Id konsumen", "id_konsumen")
                 ->sortable(),
             Column::make("Tanggal", "tanggal")

@@ -9,18 +9,24 @@
                 {{-- Konsumen --}}
                 <div>
                     <label class="block mb-1 font-medium">Konsumen</label>
-                    <select id="id_konsumen" name="id_konsumen" required class="w-full p-2 border rounded"
-                        data-points-json='@json($konsumens->pluck('jumlah_point', 'id_konsumen'))'>
-                        @foreach ($konsumens as $k)
-                            <option value="{{ $k->id_konsumen }}" data-point="{{ $k->jumlah_point }}"
-                                {{ old('id_konsumen') == $k->id_konsumen ? 'selected' : '' }}>
-                                {{ $k->nama_konsumen }} — {{ $k->jumlah_point }} pt
-                                @if ($k->kode_referral)
-                                    — Kode: {{ $k->kode_referral }}
-                                @endif
-                            </option>
-                        @endforeach
-                    </select>
+                    <div class="flex space-x-2">
+                        <select id="id_konsumen" name="id_konsumen" required class="flex-1 p-2 border rounded"
+                            data-points-json='@json($konsumens->pluck('jumlah_point', 'id_konsumen'))'>
+                            @foreach ($konsumens as $k)
+                                <option value="{{ $k->id_konsumen }}" data-point="{{ $k->jumlah_point }}"
+                                    {{ old('id_konsumen') == $k->id_konsumen ? 'selected' : '' }}>
+                                    {{ $k->nama_konsumen }} — {{ $k->jumlah_point }} pt
+                                    @if ($k->kode_referral)
+                                        — Kode: {{ $k->kode_referral }}
+                                    @endif
+                                </option>
+                            @endforeach
+                        </select>
+                        <a href="{{ route('konsumen.create', ['return_to' => url()->current()]) }}" 
+                            class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 text-center">
+                            + Konsumen
+                        </a>
+                    </div>
                     @error('id_konsumen')
                         <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
                     @enderror
@@ -223,6 +229,8 @@
         </form>
     </div>
 
+
+
     <script>
         function formatRupiah(n) {
             return 'Rp ' + n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
@@ -413,6 +421,18 @@
                 qty.disabled = !cb.checked;
             });
             calculate();
+            
+            // Auto select konsumen baru jika ada
+            @if(session('new_konsumen_id'))
+                const newKonsumenId = {{ session('new_konsumen_id') }};
+                const konsumenSelect = document.getElementById('id_konsumen');
+                if (konsumenSelect) {
+                    konsumenSelect.value = newKonsumenId;
+                    konsumenSelect.dispatchEvent(new Event('change'));
+                }
+            @endif
         });
+
+
     </script>
 </x-app-layout>

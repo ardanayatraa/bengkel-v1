@@ -23,6 +23,7 @@ class TeknisiController extends Controller
         $data = $request->validate([
             'nama_teknisi' => 'required|string|max:255',
             'kontak'       => 'nullable|string|max:255',
+            'persentase_gaji' => 'required|numeric|min:0|max:100',
         ]);
 
         Teknisi::create($data);
@@ -33,7 +34,7 @@ class TeknisiController extends Controller
 
     public function show($id)
     {
-        $teknisi = Teknisi::findOrFail($id);
+        $teknisi = Teknisi::with(['gajiTeknisis.transaksi', 'gajiTeknisis.jasa'])->findOrFail($id);
         return view('teknisi.show', compact('teknisi'));
     }
 
@@ -48,6 +49,7 @@ class TeknisiController extends Controller
         $data = $request->validate([
             'nama_teknisi' => 'required|string|max:255',
             'kontak'       => 'nullable|string|max:255',
+            'persentase_gaji' => 'required|numeric|min:0|max:100',
         ]);
 
         $teknisi = Teknisi::findOrFail($id);

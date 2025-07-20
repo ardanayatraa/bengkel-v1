@@ -27,8 +27,12 @@ class UsersTable extends DataTableComponent
     public function columns(): array
     {
         return [
-            Column::make("Id user", "id_user")
-                ->sortable(),
+            Column::make("No", "id_user")
+                ->format(function($value, $row, $column) {
+                    static $counter = 0;
+                    $counter++;
+                    return $counter;
+                }),
             Column::make("Nama user", "nama_user")
                 ->sortable(),
             Column::make("Level", "level")

@@ -82,27 +82,13 @@ class Transaksi extends Model
         return \App\Models\Jasa::whereIn('id_jasa', $ids)->get();
     }
 
-    /**
-     * Transaksi menghasilkan banyak entri point.
-     */
-    public function points()
-    {
-        return $this->hasMany(Point::class, 'id_transaksi');
-    }
-
-    // Accessor: total poin ditukar untuk transaksi ini
-    public function getRedeemedPointsAttribute(): int
-    {
-        $neg = $this->points()
-                    ->where('jumlah_point','<',0)
-                    ->sum('jumlah_point');
-        return abs($neg);
-    }
-
     // Accessor: diskon Rupiah dari poin (10pt → Rp10.000)
     public function getPointDiscountAttribute(): int
     {
-        return intdiv($this->redeemed_points,10) * 10000;
+        // Hitung diskon berdasarkan total harga dan total akhir
+        $subtotal = $this->barangWithQty()->sum('subtotal') + collect($this->jasaModels())->sum(fn($j)=>$j->harga_jasa);
+        $diskonTotal = $subtotal - $this->total_harga + $this->diskon_referral;
+        return (int) $diskonTotal;
     }
 
     // Accessor: total diskon (poin + referral)

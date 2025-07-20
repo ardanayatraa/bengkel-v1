@@ -1,6 +1,13 @@
-@props(['editRoute', 'deleteRoute', 'modalId'])
+@props(['editRoute', 'deleteRoute', 'modalId', 'showRoute' => null])
 
 <div class="flex items-center gap-4 text-sm">
+    {{-- Show/Detail --}}
+    @if ($showRoute)
+        <a href="{{ $showRoute }}" class="text-green-600 hover:underline">
+            Detail
+        </a>
+    @endif
+
     {{-- Edit --}}
     <a href="{{ $editRoute }}" class="text-blue-600 hover:underline">
         Edit

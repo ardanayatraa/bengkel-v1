@@ -307,6 +307,22 @@
                             </a>
                         </li>
 
+                        {{-- Gaji Teknisi --}}
+                        <li class="relative">
+                            <a href="/gaji-teknisi"
+                                class="flex items-center px-4 py-3 {{ request()->is('gaji-teknisi*') ? 'text-red-800 bg-white' : 'text-gray-800' }} rounded-md relative z-10">
+                                <div
+                                    class="p-1.5 rounded-full mr-3 {{ request()->is('gaji-teknisi*') ? 'bg-red-700' : 'bg-gray-400' }}">
+                                    <svg class="w-4 h-4 {{ request()->is('gaji-teknisi*') ? 'text-white' : 'text-gray-800' }}"
+                                        fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+                                    </svg>
+                                </div>
+                                <span class="font-medium">Gaji Teknisi</span>
+                            </a>
+                        </li>
+
 
                         {{-- Laporan (Group) --}}
                         <li class="relative">

@@ -69,9 +69,12 @@ class TransaksiTable extends DataTableComponent
     public function columns(): array
     {
         $columns = [
-            Column::make('ID Transaksi', 'id_transaksi')
-                ->sortable()
-                ->searchable(),
+            Column::make('No', 'id_transaksi')
+                ->format(function($value, $row, $column) {
+                    static $counter = 0;
+                    $counter++;
+                    return $counter;
+                }),
 
             Column::make('Nama Konsumen', 'konsumen.nama_konsumen')
                 ->sortable(fn($q, $d) =>

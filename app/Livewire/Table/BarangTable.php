@@ -24,7 +24,12 @@ class BarangTable extends DataTableComponent
     public function columns(): array
     {
         return [
-            Column::make("Id Barang", "id_barang")->sortable(),
+            Column::make("No", "id_barang")
+                ->format(function($value, $row, $column) {
+                    static $counter = 0;
+                    $counter++;
+                    return $counter;
+                }),
 
             // Tampilkan nama supplier, bukan id
             Column::make("Supplier", "supplier.nama_supplier")

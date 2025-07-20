@@ -18,8 +18,12 @@ class TeknisiTable extends DataTableComponent
     public function columns(): array
     {
         return [
-            Column::make("ID Teknisi", "id_teknisi")
-                ->sortable(),
+            Column::make("No", "id_teknisi")
+                ->format(function($value, $row, $column) {
+                    static $counter = 0;
+                    $counter++;
+                    return $counter;
+                }),
 
             Column::make("Nama Teknisi", "nama_teknisi")
                 ->sortable()
@@ -29,6 +33,12 @@ class TeknisiTable extends DataTableComponent
                 ->sortable()
                 ->searchable(),
 
+            Column::make("Persentase Gaji", "persentase_gaji")
+                ->sortable()
+                ->format(function($value) {
+                    return $value . '%';
+                }),
+
             Column::make("Created At", "created_at")
                 ->sortable(),
 
@@ -37,6 +47,7 @@ class TeknisiTable extends DataTableComponent
 
             Column::make('Aksi')
                 ->label(fn($row) => view('components.table-actions', [
+                    'showRoute'   => route('teknisi.show', $row->id_teknisi),
                     'editRoute'   => route('teknisi.edit', $row->id_teknisi),
                     'deleteRoute' => route('teknisi.destroy', $row->id_teknisi),
                     'modalId'     => 'delete-teknisi-' . $row->id_teknisi,

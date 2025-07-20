@@ -7,7 +7,7 @@ use App\Models\Transaksi;
 use App\Models\Konsumen;
 use App\Models\Barang;
 use App\Models\Jasa;
-use App\Models\Point;
+use App\Models\GajiTeknisi;
 use Illuminate\Support\Facades\Auth;
 use Barryvdh\DomPDF\Facade\Pdf;
 
@@ -15,7 +15,7 @@ class TransaksiController extends Controller
 {
     public function index()
     {
-        $transaksis = Transaksi::with(['konsumen','teknisi','points'])
+        $transaksis = Transaksi::with(['konsumen','teknisi'])
             ->orderByDesc('tanggal_transaksi')
             ->get();
 
@@ -152,20 +152,36 @@ class TransaksiController extends Controller
         strtolower($konsumen->keterangan) === 'member'
         && !empty($v['id_jasa'])
     ) {
-        Point::create([
-            'id_konsumen'  => $konsumen->id_konsumen,
-            'id_transaksi' => $transaksi->id_transaksi,
-            'tanggal'      => now()->toDateString(),
-            'jumlah_point' => 1,
-        ]);
         $konsumen->increment('jumlah_point', 1);
     }
 
-    // Berikan poin reward untuk pemberi kode referral (langsung increment tanpa Point model)
+    // Berikan poin reward untuk pemberi kode referral
     if ($konsumenPemberiReferral) {
         $konsumenPemberiReferral->increment('jumlah_point', 1);
     }
 
+    // Buat gaji teknisi otomatis jika ada teknisi dan jasa
+    if ($v['id_teknisi'] && !empty($v['id_jasa'])) {
+        $teknisi = \App\Models\Teknisi::find($v['id_teknisi']);
+        
+        foreach ($v['id_jasa'] as $idJasa) {
+            $jasa = Jasa::find($idJasa);
+            $jumlahGaji = ($jasa->harga_jasa * $teknisi->persentase_gaji) / 100;
+            
+            GajiTeknisi::create([
+                'id_teknisi' => $teknisi->id_teknisi,
+                'id_transaksi' => $transaksi->id_transaksi,
+                'id_jasa' => $jasa->id_jasa,
+                'harga_jasa' => $jasa->harga_jasa,
+                'persentase_gaji' => $teknisi->persentase_gaji,
+                'jumlah_gaji' => $jumlahGaji,
+                'tanggal_kerja' => $v['tanggal_transaksi'],
+                'status_pembayaran' => 'belum_dibayar',
+            ]);
+        }
+    }
+
+    // Redirect ke index setelah create transaksi
     return redirect()->route('transaksi.index')
                      ->with('success','Transaksi berhasil disimpan.');
 }
@@ -254,7 +270,7 @@ class TransaksiController extends Controller
 
     public function show($id)
     {
-        $transaksi = Transaksi::with(['konsumen','teknisi','points'])
+        $transaksi = Transaksi::with(['konsumen','teknisi'])
             ->findOrFail($id);
 
         $barangs   = $transaksi->barangWithQty();
@@ -275,7 +291,7 @@ class TransaksiController extends Controller
 
     public function print($id)
     {
-        $transaksi = Transaksi::with(['konsumen','teknisi','points'])
+        $transaksi = Transaksi::with(['konsumen','teknisi'])
             ->findOrFail($id);
 
         $barangs  = $transaksi->barangWithQty();
@@ -313,6 +329,38 @@ class TransaksiController extends Controller
     public function destroy($id)
     {
         $transaksi = Transaksi::findOrFail($id);
+        
+        // Ambil data transaksi sebelum dihapus
+        $konsumen = $transaksi->konsumen;
+        $konsumenPemberiReferral = $transaksi->konsumenPemberiReferral();
+        
+        // Kembalikan point yang sudah digunakan (redeem points)
+        // Hitung dari diskon poin yang diberikan (10pt = Rp10.000)
+        $diskonPoin = $transaksi->point_discount;
+        if ($diskonPoin > 0) {
+            $redeemedPoints = ($diskonPoin / 10000) * 10; // Konversi balik dari Rupiah ke point
+            $konsumen->increment('jumlah_point', $redeemedPoints);
+        }
+        
+        // Kurangi point yang diberikan untuk jasa (jika ada)
+        if (
+            strtolower($konsumen->keterangan) === 'member'
+            && !empty($transaksi->id_jasa)
+        ) {
+            $konsumen->decrement('jumlah_point', 1);
+        }
+        
+        // Kurangi point reward untuk pemberi referral (jika ada)
+        if ($konsumenPemberiReferral) {
+            $konsumenPemberiReferral->decrement('jumlah_point', 1);
+        }
+        
+        // Kurangi point yang diberikan saat status 'diambil' (jika ada)
+        if ($transaksi->status_service === 'diambil') {
+            $konsumen->decrement('jumlah_point', 1);
+        }
+        
+        // Hapus transaksi
         $transaksi->delete();
 
         return redirect()

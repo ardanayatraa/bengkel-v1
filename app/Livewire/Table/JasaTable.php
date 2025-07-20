@@ -18,8 +18,12 @@ class JasaTable extends DataTableComponent
     public function columns(): array
     {
         return [
-            Column::make("Id jasa", "id_jasa")
-                ->sortable(),
+            Column::make("No", "id_jasa")
+                ->format(function($value, $row, $column) {
+                    static $counter = 0;
+                    $counter++;
+                    return $counter;
+                }),
             Column::make("Nama jasa", "nama_jasa")
                 ->sortable(),
             Column::make("Harga jasa", "harga_jasa")

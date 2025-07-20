@@ -18,8 +18,12 @@ class KonsumenTable extends DataTableComponent
     public function columns(): array
     {
         return [
-            Column::make("Id konsumen", "id_konsumen")
-                ->sortable(),
+            Column::make("No", "id_konsumen")
+                ->format(function($value, $row, $column) {
+                    static $counter = 0;
+                    $counter++;
+                    return $counter;
+                }),
             Column::make("Nama konsumen", "nama_konsumen")
                 ->sortable(),
             Column::make("No kendaraan", "no_kendaraan")
