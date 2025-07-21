@@ -147,6 +147,14 @@ class TransaksiController extends Controller
         'diskon_referral'          => $diskonReferral,
     ]);
 
+    // KURANGI STOK BARANG
+    foreach ($barangJson as $id => $qty) {
+        $barang = Barang::find($id);
+        if ($barang) {
+            $barang->decrement('stok', $qty);
+        }
+    }
+
     // Tambah poin baru untuk member yang melakukan jasa
     if (
         strtolower($konsumen->keterangan) === 'member'
