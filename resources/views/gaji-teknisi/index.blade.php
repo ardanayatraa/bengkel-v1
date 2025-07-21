@@ -3,12 +3,12 @@
         <div class="flex justify-between items-center mb-6">
             <h2 class="text-lg font-semibold">Daftar Gaji Teknisi</h2>
             <div class="flex gap-2">
-                <form action="{{ route('gaji-teknisi.generate-otomatis') }}" method="POST" class="inline">
+                {{-- <form action="{{ route('gaji-teknisi.generate-otomatis') }}" method="POST" class="inline">
                     @csrf
                     <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">
                         Generate Otomatis
                     </button>
-                </form>
+                </form> --}}
                 <form action="{{ route('gaji-teknisi.bayar-semua') }}" method="POST" class="inline">
                     @csrf
                     <button type="submit" class="px-4 py-2 bg-red-800 text-white rounded hover:bg-red-900" 
