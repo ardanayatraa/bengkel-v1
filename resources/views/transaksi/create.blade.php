@@ -130,9 +130,10 @@
                 {{-- Jasa --}}
                 <div class="md:col-span-2">
                     <label class="block mb-1 font-medium">Jasa (bisa pilih banyak)</label>
-                    <div class="grid grid-cols-2 gap-2 p-2 border rounded max-h-40 overflow-auto">
+                    <input type="text" id="search_jasa" placeholder="Cari jasa..." class="mb-2 w-full p-2 border rounded" />
+                    <div class="grid grid-cols-2 gap-2 p-2 border rounded max-h-40 overflow-auto" id="jasa_list">
                         @foreach ($jasas as $j)
-                            <label class="flex items-center space-x-2">
+                            <label class="flex items-center space-x-2 jasa-item">
                                 <input type="checkbox" name="id_jasa[]" value="{{ $j->id_jasa }}"
                                     data-harga="{{ $j->harga_jasa }}" class="jasa-cb"
                                     {{ is_array(old('id_jasa')) && in_array($j->id_jasa, old('id_jasa')) ? 'checked' : '' }} />
@@ -158,16 +159,16 @@
                 {{-- Barang --}}
                 <div class="md:col-span-2">
                     <label class="block mb-1 font-medium">Barang (qty per item)</label>
-                    <div class="grid grid-cols-2 gap-2 p-2 border rounded max-h-40 overflow-auto">
+                    <input type="text" id="search_barang" placeholder="Cari barang..." class="mb-2 w-full p-2 border rounded" />
+                    <div class="grid grid-cols-2 gap-2 p-2 border rounded max-h-40 overflow-auto" id="barang_list">
                         @foreach ($barangs as $b)
-                            <div class="flex items-center space-x-2">
+                            <div class="flex items-center space-x-2 barang-item">
                                 <input type="checkbox" name="id_barang[]" value="{{ $b->id_barang }}"
                                     data-harga="{{ $b->harga_jual }}" class="barang-cb"
                                     {{ is_array(old('id_barang')) && in_array($b->id_barang, old('id_barang')) ? 'checked' : '' }} />
                                 <span class="flex-1">{{ $b->nama_barang }} — Rp
                                     {{ number_format($b->harga_jual, 0, ',', '.') }}</span>
                                 <input type="number" name="qty_barang[{{ $b->id_barang }}]"
-                                    value="{{ old('qty_barang.' . $b->id_barang, 1) }}" min="1"
                                     class="qty-input w-16 p-1 border rounded text-sm"
                                     {{ is_array(old('id_barang')) && in_array($b->id_barang, old('id_barang')) ? '' : 'disabled' }} />
                             </div>
@@ -413,6 +414,23 @@
             calculate();
         });
         document.getElementById('uang_diterima').addEventListener('input', calculate);
+
+        // SEARCH JASA
+        document.getElementById('search_jasa').addEventListener('input', function() {
+            const val = this.value.toLowerCase();
+            document.querySelectorAll('#jasa_list .jasa-item').forEach(function(item) {
+                const text = item.textContent.toLowerCase();
+                item.style.display = text.includes(val) ? '' : 'none';
+            });
+        });
+        // SEARCH BARANG
+        document.getElementById('search_barang').addEventListener('input', function() {
+            const val = this.value.toLowerCase();
+            document.querySelectorAll('#barang_list .barang-item').forEach(function(item) {
+                const text = item.textContent.toLowerCase();
+                item.style.display = text.includes(val) ? '' : 'none';
+            });
+        });
 
         window.addEventListener('load', () => {
             // disable all qty-input di awal
