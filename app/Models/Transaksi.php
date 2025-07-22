@@ -67,20 +67,23 @@ class Transaksi extends Model
     /**
      * Ambil koleksi Jasa dari JSON array id_jasa.
      */
-    public function jasaModels()
-    {
-        $ids = $this->id_jasa;
+   public function jasaModels()
+{
+    $ids = $this->id_jasa;
 
-        if (is_null($ids)) {
-            $ids = [];
-        }
-        elseif (! is_array($ids)) {
-            $decoded = json_decode($ids, true);
-            $ids = is_array($decoded) ? $decoded : [$ids];
-        }
-
-        return \App\Models\Jasa::whereIn('id_jasa', $ids)->get();
+    if (is_null($ids)) {
+        $ids = [];
+    } elseif (! is_array($ids)) {
+        $decoded = json_decode($ids, true);
+        $ids = is_array($decoded) ? $decoded : [$ids];
     }
+
+    // FIX: Konversi string ke integer
+    $ids = array_map('intval', $ids);
+
+    return \App\Models\Jasa::whereIn('id_jasa', $ids)->get();
+}
+
 
     // Accessor: diskon Rupiah dari poin (10pt → Rp10.000)
     public function getPointDiscountAttribute(): int
