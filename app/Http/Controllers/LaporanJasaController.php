@@ -27,7 +27,7 @@ class LaporanJasaController extends Controller
 
         // Base query: transaksi jasa
         $base = Transaksi::with(['konsumen','kasir','teknisi'])
-            ->whereJsonLength('id_jasa','>',0);
+            ->whereNotNull('id_jasa')->where('id_jasa', '!=', '[]');
 
         // Non-admin see only their own transactions
         if (! $isAdmin) {
@@ -77,7 +77,7 @@ class LaporanJasaController extends Controller
         $teknisiId  = $request->input('teknisi_id');
 
         $base = Transaksi::with(['konsumen','kasir','teknisi'])
-            ->whereJsonLength('id_jasa','>',0);
+            ->whereNotNull('id_jasa')->where('id_jasa', '!=', '[]');
 
         if (! $isAdmin) {
             $base->where('id_user', $user->id_user);
