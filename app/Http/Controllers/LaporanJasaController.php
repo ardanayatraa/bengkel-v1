@@ -12,6 +12,8 @@ class LaporanJasaController extends Controller
 {
     public function index(Request $request)
     {
+        dd('Halaman laporan jasa belum tersedia. Silakan hubungi pengembang untuk informasi lebih lanjut.');
+
         $user      = auth()->user();
         $isAdmin   = $user->level === 'admin';
 
