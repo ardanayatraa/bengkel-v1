@@ -1,6 +1,18 @@
 <x-app-layout>
     <div class="bg-white rounded-lg shadow-sm border p-6">
 
+        {{-- Debug Info (hapus setelah fix) --}}
+        @if (isset($debugCount))
+            <div class="mb-4 p-3 bg-yellow-100 border border-yellow-400 rounded">
+                <strong>Debug Info:</strong>
+                Total Transaksi: {{ $debugCount }} |
+                Transaksi dengan Jasa: {{ $debugWithJasa }}
+                @if ($debugWithJasa === 0)
+                    <br><span class="text-red-600">⚠️ Tidak ada transaksi dengan data jasa yang valid!</span>
+                @endif
+            </div>
+        @endif
+
         {{-- Filters --}}
         <form method="GET" action="{{ route('laporan.jasa') }}" class="flex flex-wrap gap-2 mb-6">
             <input type="text" name="search" value="{{ $search }}" placeholder="Cari Nama/No Polisi..."
@@ -45,6 +57,12 @@
                 </svg>
                 Cetak PDF
             </a>
+
+            {{-- Debug Button (hapus setelah fix) --}}
+            <a href="{{ route('laporan.jasa.debug') }}" class="px-4 py-2 bg-red-600 text-white rounded"
+                target="_blank">
+                🐛 Debug
+            </a>
         </form>
 
         {{-- Summary --}}
@@ -83,22 +101,40 @@
                             <td class="px-6 py-2">{{ $trx->konsumen->nama_konsumen ?? '-' }}</td>
                             <td class="px-6 py-2">{{ $trx->konsumen->no_kendaraan ?? '-' }}</td>
                             <td class="px-6 py-2 space-y-1">
-                                @foreach ($trx->jasaModels() as $j)
-                                    <span
-                                        class="inline-block px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">
-                                        {{ $j->nama_jasa }}—Rp{{ number_format($j->harga_jasa, 0, ',', '.') }}
+                                @if ($trx->jasas && $trx->jasas->count() > 0)
+                                    @foreach ($trx->jasas as $j)
+                                        <span
+                                            class="inline-block px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">
+                                            {{ $j->nama_jasa }}—Rp{{ number_format($j->harga_jasa, 0, ',', '.') }}
+                                        </span>
+                                    @endforeach
+                                @else
+                                    <span class="text-red-500 text-xs">
+                                        No jasa found ({{ $trx->id_jasa ?? 'NULL' }})
                                     </span>
-                                @endforeach
+                                @endif
                             </td>
-                            <td class="px-6 py-2">{{ $trx->tanggal_transaksi->format('d/m/Y') }}</td>
+                            <td class="px-6 py-2">
+                                {{ $trx->tanggal_transaksi ? $trx->tanggal_transaksi->format('d/m/Y') : '-' }}
+                            </td>
                             <td class="px-6 py-2 font-semibold">
-                                Rp {{ number_format($trx->jasaModels()->sum('harga_jasa'), 0, ',', '.') }}
+                                @if ($trx->jasas && $trx->jasas->count() > 0)
+                                    Rp {{ number_format($trx->jasas->sum('harga_jasa'), 0, ',', '.') }}
+                                @else
+                                    Rp 0
+                                @endif
                             </td>
-                            <td class="px-6 py-2">{{ ucfirst($trx->metode_pembayaran) }}</td>
+                            <td class="px-6 py-2">{{ ucfirst($trx->metode_pembayaran ?? '-') }}</td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="9" class="px-6 py-16 text-center text-gray-400">Tidak ada data.</td>
+                            <td colspan="9" class="px-6 py-16 text-center text-gray-400">
+                                Tidak ada data transaksi jasa.
+                                @if (isset($debugWithJasa) && $debugWithJasa === 0)
+                                    <br><small class="text-red-500">Pastikan kolom id_jasa terisi dengan format JSON
+                                        yang benar.</small>
+                                @endif
+                            </td>
                         </tr>
                     @endforelse
                 </tbody>
