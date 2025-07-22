@@ -30,7 +30,6 @@ class LaporanJasaController extends Controller
         $base = Transaksi::with(['konsumen','kasir','teknisi'])
               ->whereRaw("JSON_LENGTH(id_jasa) > 0");
 
-              dd($base->toSql(), $base->getBindings());
 
         // Non-admin see only their own transactions
         if (! $isAdmin) {
@@ -43,6 +42,9 @@ class LaporanJasaController extends Controller
 
         // Terapkan filter
         $filtered = clone $base;
+
+        dd($filtered->toSql(), $filtered->getBindings(),
+            $start, $end, $search, $kasirId, $teknisiId);
         if ($start)      $filtered->whereDate('tanggal_transaksi','>=',$start);
         if ($end)        $filtered->whereDate('tanggal_transaksi','<=',$end);
         if ($search)     $filtered->whereHas('konsumen', fn($q)=>
