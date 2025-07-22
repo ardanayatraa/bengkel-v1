@@ -12,7 +12,6 @@ class LaporanJasaController extends Controller
 {
     public function index(Request $request)
     {
-        dd('Halaman laporan jasa belum tersedia. Silakan hubungi pengembang untuk informasi lebih lanjut.');
 
         $user      = auth()->user();
         $isAdmin   = $user->level === 'admin';
@@ -30,6 +29,8 @@ class LaporanJasaController extends Controller
         // Base query: transaksi jasa
         $base = Transaksi::with(['konsumen','kasir','teknisi'])
               ->whereRaw("JSON_LENGTH(id_jasa) > 0");
+
+              dd($base->toSql(), $base->getBindings());
 
         // Non-admin see only their own transactions
         if (! $isAdmin) {
