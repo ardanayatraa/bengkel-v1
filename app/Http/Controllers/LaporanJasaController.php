@@ -31,9 +31,9 @@ class LaporanJasaController extends Controller
             ->whereRaw('LENGTH(id_jasa) > 2');
 
         // Non-admin see only their own transactions
-        if (!$isAdmin) {
-            $base->where('id_user', $user->id_user);
-        }
+        // if (!$isAdmin) {
+        //     $base->where('id_user', $user->id_user);
+        // }
 
         // Total without date/search filters
         $totalAll = (clone $base)->get()
@@ -81,9 +81,9 @@ class LaporanJasaController extends Controller
             ->whereNotNull('id_jasa')
             ->whereRaw('LENGTH(id_jasa) > 2');
 
-        if (!$isAdmin) {
-            $base->where('id_user', $user->id_user);
-        }
+        // if (!$isAdmin) {
+        //     $base->where('id_user', $user->id_user);
+        // }
         if ($start) $base->whereDate('tanggal_transaksi', '>=', $start);
         if ($end) $base->whereDate('tanggal_transaksi', '<=', $end);
         if ($search) $base->whereHas('konsumen', fn($q) =>
