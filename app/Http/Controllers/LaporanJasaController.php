@@ -26,8 +26,9 @@ class LaporanJasaController extends Controller
         $teknisis  = Teknisi::orderBy('nama_teknisi')->get();
 
         // Base query: transaksi jasa
-        $base = Transaksi::with(['konsumen','kasir','teknisi']);
-dd($base->get());
+        $base = Transaksi::with(['konsumen','kasir','teknisi'])
+            ->whereJsonLength('id_jasa','>',0);
+
         // Non-admin see only their own transactions
         if (! $isAdmin) {
             $base->where('id_user', $user->id_user);
@@ -38,9 +39,7 @@ dd($base->get());
             ->sum(fn($trx) => $trx->jasaModels()->sum('harga_jasa'));
 
         // Terapkan filter
-        $filtered = clone $base;
-
-dd($filtered->get());
+        $filtered = $base;
         if ($start)      $filtered->whereDate('tanggal_transaksi','>=',$start);
         if ($end)        $filtered->whereDate('tanggal_transaksi','<=',$end);
         if ($search)     $filtered->whereHas('konsumen', fn($q)=>
@@ -58,8 +57,6 @@ dd($filtered->get());
             ->orderByDesc('tanggal_transaksi')
             ->paginate(10)
             ->appends(compact('start','end','search','kasirId','teknisiId'));
-
-            dd($transaksis);
 
         return view('laporan.jasa.index', compact(
             'transaksis','start','end','search',
