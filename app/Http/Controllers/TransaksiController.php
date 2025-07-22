@@ -171,11 +171,11 @@ class TransaksiController extends Controller
     // Buat gaji teknisi otomatis jika ada teknisi dan jasa
     if ($v['id_teknisi'] && !empty($v['id_jasa'])) {
         $teknisi = \App\Models\Teknisi::find($v['id_teknisi']);
-        
+
         foreach ($v['id_jasa'] as $idJasa) {
             $jasa = Jasa::find($idJasa);
             $jumlahGaji = ($jasa->harga_jasa * $teknisi->persentase_gaji) / 100;
-            
+
             GajiTeknisi::create([
                 'id_teknisi' => $teknisi->id_teknisi,
                 'id_transaksi' => $transaksi->id_transaksi,
@@ -337,11 +337,11 @@ class TransaksiController extends Controller
     public function destroy($id)
     {
         $transaksi = Transaksi::findOrFail($id);
-        
+
         // Ambil data transaksi sebelum dihapus
         $konsumen = $transaksi->konsumen;
         $konsumenPemberiReferral = $transaksi->konsumenPemberiReferral();
-        
+
         // Kembalikan point yang sudah digunakan (redeem points)
         // Hitung dari diskon poin yang diberikan (10pt = Rp10.000)
         $diskonPoin = $transaksi->point_discount;
@@ -349,7 +349,7 @@ class TransaksiController extends Controller
             $redeemedPoints = ($diskonPoin / 10000) * 10; // Konversi balik dari Rupiah ke point
             $konsumen->increment('jumlah_point', $redeemedPoints);
         }
-        
+
         // Kurangi point yang diberikan untuk jasa (jika ada)
         if (
             strtolower($konsumen->keterangan) === 'member'
@@ -357,17 +357,17 @@ class TransaksiController extends Controller
         ) {
             $konsumen->decrement('jumlah_point', 1);
         }
-        
+
         // Kurangi point reward untuk pemberi referral (jika ada)
         if ($konsumenPemberiReferral) {
             $konsumenPemberiReferral->decrement('jumlah_point', 1);
         }
-        
+
         // Kurangi point yang diberikan saat status 'diambil' (jika ada)
         if ($transaksi->status_service === 'diambil') {
             $konsumen->decrement('jumlah_point', 1);
         }
-        
+
         // Hapus transaksi
         $transaksi->delete();
 

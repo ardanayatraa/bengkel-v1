@@ -26,8 +26,7 @@ class LaporanJasaController extends Controller
         $teknisis  = Teknisi::orderBy('nama_teknisi')->get();
 
         // Base query: transaksi jasa
-        $base = Transaksi::with(['konsumen','kasir','teknisi'])
-              ->whereRaw("JSON_LENGTH(id_jasa) > 0");
+        $base = Transaksi::with(['konsumen','kasir','teknisi']);
 
         // Non-admin see only their own transactions
         if (! $isAdmin) {
