@@ -58,7 +58,7 @@ class LaporanJasaController extends Controller
             ->paginate(10)
             ->appends(compact('start','end','search','kasirId','teknisiId'));
 
-            dd($transaksis->get());
+            dd($transaksis);
 
         return view('laporan.jasa.index', compact(
             'transaksis','start','end','search',
