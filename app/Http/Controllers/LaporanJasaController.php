@@ -35,8 +35,8 @@ class LaporanJasaController extends Controller
         // }
 
         // // Total tanpa filter
-        // $totalAll = $base->get()
-        //     ->sum(fn($trx) => $trx->jasaModels()->sum('harga_jasa'));
+        $totalAll = $base->get()
+            ->sum(fn($trx) => $trx->jasaModels()->sum('harga_jasa'));
 
         // Terapkan filter
         // $filtered = $base;
