@@ -12,43 +12,43 @@ class LaporanJasaController extends Controller
 {
     public function index(Request $request)
     {
-        $user      = auth()->user();
-        $isAdmin   = $user->level === 'admin';
+        $user = auth()->user();
+        $isAdmin = $user->level === 'admin';
 
-        $start      = $request->input('start_date');
-        $end        = $request->input('end_date');
-        $search     = $request->input('search');
-        $kasirId    = $request->input('kasir_id');
-        $teknisiId  = $request->input('teknisi_id');
+        $start = $request->input('start_date');
+        $end = $request->input('end_date');
+        $search = $request->input('search');
+        $kasirId = $request->input('kasir_id');
+        $teknisiId = $request->input('teknisi_id');
 
         // Dropdown data
-        $kasirs    = $isAdmin ? User::where('level','kasir')->orderBy('nama_user')->get() : collect();
-        $teknisis  = Teknisi::orderBy('nama_teknisi')->get();
+        $kasirs = $isAdmin ? User::where('level', 'kasir')->orderBy('nama_user')->get() : collect();
+        $teknisis = Teknisi::orderBy('nama_teknisi')->get();
 
-        // Base query: transaksi jasa
-        $base = Transaksi::with(['konsumen','kasir','teknisi'])
-            ->hasJasa();
+        // Base query: transactions with services
+        $base = Transaksi::with(['konsumen', 'kasir', 'teknisi'])
+            ->whereRaw("id_jasa IS NOT NULL AND id_jasa != '[]' AND id_jasa != '\"\"'");
 
         // Non-admin see only their own transactions
-        if (! $isAdmin) {
+        if (!$isAdmin) {
             $base->where('id_user', $user->id_user);
         }
 
-        // Total tanpa filter
+        // Total without date/search filters
         $totalAll = (clone $base)->get()
             ->sum(fn($trx) => $trx->jasaModels()->sum('harga_jasa'));
 
-        // Terapkan filter
+        // Apply filters
         $filtered = $base;
-        if ($start)      $filtered->whereDate('tanggal_transaksi','>=',$start);
-        if ($end)        $filtered->whereDate('tanggal_transaksi','<=',$end);
-        if ($search)     $filtered->whereHas('konsumen', fn($q)=>
-                              $q->where('nama_konsumen','like',"%{$search}%")
-                                ->orWhere('no_kendaraan','like',"%{$search}%"));
-        if ($isAdmin && $kasirId)   $filtered->where('id_user',    $kasirId);
-        if ($teknisiId)             $filtered->where('id_teknisi', $teknisiId);
+        if ($start) $filtered->whereDate('tanggal_transaksi', '>=', $start);
+        if ($end) $filtered->whereDate('tanggal_transaksi', '<=', $end);
+        if ($search) $filtered->whereHas('konsumen', fn($q) =>
+            $q->where('nama_konsumen', 'like', "%{$search}%")
+              ->orWhere('no_kendaraan', 'like', "%{$search}%"));
+        if ($isAdmin && $kasirId) $filtered->where('id_user', $kasirId);
+        if ($teknisiId) $filtered->where('id_teknisi', $teknisiId);
 
-        // Total setelah filter
+        // Total after filters
         $totalFiltered = (clone $filtered)->get()
             ->sum(fn($trx) => $trx->jasaModels()->sum('harga_jasa'));
 
@@ -56,48 +56,48 @@ class LaporanJasaController extends Controller
         $transaksis = $filtered
             ->orderByDesc('tanggal_transaksi')
             ->paginate(10)
-            ->appends(compact('start','end','search','kasirId','teknisiId'));
+            ->appends(compact('start', 'end', 'search', 'kasirId', 'teknisiId'));
 
         return view('laporan.jasa.index', compact(
-            'transaksis','start','end','search',
-            'kasirs','teknisis','kasirId','teknisiId',
-            'totalAll','totalFiltered','isAdmin'
+            'transaksis', 'start', 'end', 'search',
+            'kasirs', 'teknisis', 'kasirId', 'teknisiId',
+            'totalAll', 'totalFiltered', 'isAdmin'
         ));
     }
 
     public function exportPdf(Request $request)
     {
-        $user      = auth()->user();
-        $isAdmin   = $user->level === 'admin';
+        $user = auth()->user();
+        $isAdmin = $user->level === 'admin';
 
-        $start      = $request->input('start_date');
-        $end        = $request->input('end_date');
-        $search     = $request->input('search');
-        $kasirId    = $request->input('kasir_id');
-        $teknisiId  = $request->input('teknisi_id');
+        $start = $request->input('start_date');
+        $end = $request->input('end_date');
+        $search = $request->input('search');
+        $kasirId = $request->input('kasir_id');
+        $teknisiId = $request->input('teknisi_id');
 
-        $base = Transaksi::with(['konsumen','kasir','teknisi'])
-            ->hasJasa();
+        $base = Transaksi::with(['konsumen', 'kasir', 'teknisi'])
+            ->whereRaw("id_jasa IS NOT NULL AND id_jasa != '[]' AND id_jasa != '\"\"'");
 
-        if (! $isAdmin) {
+        if (!$isAdmin) {
             $base->where('id_user', $user->id_user);
         }
-        if ($start)      $base->whereDate('tanggal_transaksi','>=',$start);
-        if ($end)        $base->whereDate('tanggal_transaksi','<=',$end);
-        if ($search)     $base->whereHas('konsumen', fn($q)=>
-                              $q->where('nama_konsumen','like',"%{$search}%")
-                                ->orWhere('no_kendaraan','like',"%{$search}%"));
-        if ($isAdmin && $kasirId)   $base->where('id_user',    $kasirId);
-        if ($teknisiId)             $base->where('id_teknisi', $teknisiId);
+        if ($start) $base->whereDate('tanggal_transaksi', '>=', $start);
+        if ($end) $base->whereDate('tanggal_transaksi', '<=', $end);
+        if ($search) $base->whereHas('konsumen', fn($q) =>
+            $q->where('nama_konsumen', 'like', "%{$search}%")
+              ->orWhere('no_kendaraan', 'like', "%{$search}%"));
+        if ($isAdmin && $kasirId) $base->where('id_user', $kasirId);
+        if ($teknisiId) $base->where('id_teknisi', $teknisiId);
 
-        $transaksis    = $base->orderByDesc('tanggal_transaksi')->get();
+        $transaksis = $base->orderByDesc('tanggal_transaksi')->get();
         $totalFiltered = $transaksis->sum(fn($trx) => $trx->jasaModels()->sum('harga_jasa'));
 
         $pdf = Pdf::loadView('laporan.jasa.pdf', compact(
-            'transaksis','start','end','search',
-            'kasirId','teknisiId','totalFiltered','isAdmin'
+            'transaksis', 'start', 'end', 'search',
+            'kasirId', 'teknisiId', 'totalFiltered', 'isAdmin'
         ))
-        ->setPaper('a4','landscape');
+        ->setPaper('a4', 'landscape');
 
         return $pdf->stream("laporan-transaksi-jasa.pdf");
     }
