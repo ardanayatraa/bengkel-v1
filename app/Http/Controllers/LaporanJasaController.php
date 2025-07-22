@@ -43,7 +43,7 @@ class LaporanJasaController extends Controller
         // Terapkan filter
         $filtered = clone $base;
 
-        dd($filtered->toSql(), $filtered->getBindings(),
+        dd($filtered->get(), $filtered->getBindings(),
             $start, $end, $search, $kasirId, $teknisiId);
         if ($start)      $filtered->whereDate('tanggal_transaksi','>=',$start);
         if ($end)        $filtered->whereDate('tanggal_transaksi','<=',$end);
