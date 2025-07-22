@@ -27,39 +27,36 @@ class LaporanJasaController extends Controller
 
         // Base query: transaksi jasa
         $base = Transaksi::with(['konsumen','kasir','teknisi'])
-            ;
+            ->whereJsonLength('id_jasa','>',0);
 
-        // // Non-admin see only their own transactions
-        // if (! $isAdmin) {
-        //     $base->where('id_user', $user->id_user);
-        // }
+        // Non-admin see only their own transactions
+        if (! $isAdmin) {
+            $base->where('id_user', $user->id_user);
+        }
 
-        // // Total tanpa filter
-        $totalAll = $base->get()
+        // Total tanpa filter
+        $totalAll = (clone $base)->get()
             ->sum(fn($trx) => $trx->jasaModels()->sum('harga_jasa'));
 
         // Terapkan filter
-        // $filtered = $base;
-        // if ($start)      $filtered->whereDate('tanggal_transaksi','>=',$start);
-        // if ($end)        $filtered->whereDate('tanggal_transaksi','<=',$end);
-        // if ($search)     $filtered->whereHas('konsumen', fn($q)=>
-        //                       $q->where('nama_konsumen','like',"%{$search}%")
-        //                         ->orWhere('no_kendaraan','like',"%{$search}%"));
-        // if ($isAdmin && $kasirId)   $filtered->where('id_user',    $kasirId);
-        // if ($teknisiId)             $filtered->where('id_teknisi', $teknisiId);
+        $filtered = $base;
+        if ($start)      $filtered->whereDate('tanggal_transaksi','>=',$start);
+        if ($end)        $filtered->whereDate('tanggal_transaksi','<=',$end);
+        if ($search)     $filtered->whereHas('konsumen', fn($q)=>
+                              $q->where('nama_konsumen','like',"%{$search}%")
+                                ->orWhere('no_kendaraan','like',"%{$search}%"));
+        if ($isAdmin && $kasirId)   $filtered->where('id_user',    $kasirId);
+        if ($teknisiId)             $filtered->where('id_teknisi', $teknisiId);
 
-        // // Total setelah filter
-        // $totalFiltered = $filtered->get()
-        //     ->sum(fn($trx) => $trx->jasaModels()->sum('harga_jasa'));
+        // Total setelah filter
+        $totalFiltered = (clone $filtered)->get()
+            ->sum(fn($trx) => $trx->jasaModels()->sum('harga_jasa'));
 
-        // // Paginate & preserve filters
-        // $transaksis = $filtered
-        //     ->orderByDesc('tanggal_transaksi')
-        //     ->paginate(10)
-        //     ->appends(compact('start','end','search','kasirId','teknisiId'));
-
-
-        $transaksis = $base;
+        // Paginate & preserve filters
+        $transaksis = $filtered
+            ->orderByDesc('tanggal_transaksi')
+            ->paginate(10)
+            ->appends(compact('start','end','search','kasirId','teknisiId'));
 
         return view('laporan.jasa.index', compact(
             'transaksis','start','end','search',
