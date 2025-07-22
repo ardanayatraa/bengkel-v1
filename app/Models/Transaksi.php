@@ -160,4 +160,16 @@ class Transaksi extends Model
     {
         return $this->belongsTo(Konsumen::class, 'kode_referral_digunakan', 'kode_referral');
     }
+/**
+     * Scope a query to only include transactions that have services.
+     *
+     * @param  \Illuminate\Database\Eloquent\Builder  $query
+     * @return \Illuminate\Database\Eloquent\Builder
+     */
+    public function scopeHasJasa($query)
+    {
+        return $query->whereNotNull('id_jasa')
+                     ->where('id_jasa', '!=', '[]')
+                     ->where('id_jasa', '!=', '""');
+    }
 }
