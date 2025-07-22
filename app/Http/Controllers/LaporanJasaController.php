@@ -77,7 +77,7 @@ class LaporanJasaController extends Controller
         $teknisiId  = $request->input('teknisi_id');
 
         $base = Transaksi::with(['konsumen','kasir','teknisi'])
-            ->whereJsonLength('id_jasa','>',0);
+            ->whereRaw("JSON_LENGTH(id_jasa) > 0");
 
         if (! $isAdmin) {
             $base->where('id_user', $user->id_user);
