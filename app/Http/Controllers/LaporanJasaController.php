@@ -58,6 +58,8 @@ class LaporanJasaController extends Controller
             ->paginate(10)
             ->appends(compact('start','end','search','kasirId','teknisiId'));
 
+            dd($transaksis->get());
+
         return view('laporan.jasa.index', compact(
             'transaksis','start','end','search',
             'kasirs','teknisis','kasirId','teknisiId',
@@ -91,8 +93,6 @@ class LaporanJasaController extends Controller
         if ($teknisiId)             $base->where('id_teknisi', $teknisiId);
 
         $transaksis    = $base->orderByDesc('tanggal_transaksi')->get();
-
-        dd($transaksis);
         $totalFiltered = $transaksis->sum(fn($trx) => $trx->jasaModels()->sum('harga_jasa'));
 
         $pdf = Pdf::loadView('laporan.jasa.pdf', compact(
