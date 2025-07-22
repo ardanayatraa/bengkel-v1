@@ -25,9 +25,10 @@ class LaporanJasaController extends Controller
         $kasirs = $isAdmin ? User::where('level', 'kasir')->orderBy('nama_user')->get() : collect();
         $teknisis = Teknisi::orderBy('nama_teknisi')->get();
 
-        // Base query: transactions with services
+        // Base query: transactions with services, using a robust length check.
         $base = Transaksi::with(['konsumen', 'kasir', 'teknisi'])
-            ->whereRaw("id_jasa IS NOT NULL AND id_jasa != '[]' AND id_jasa != '\"\"'");
+            ->whereNotNull('id_jasa')
+            ->whereRaw('LENGTH(id_jasa) > 2');
 
         // Non-admin see only their own transactions
         if (!$isAdmin) {
@@ -77,7 +78,8 @@ class LaporanJasaController extends Controller
         $teknisiId = $request->input('teknisi_id');
 
         $base = Transaksi::with(['konsumen', 'kasir', 'teknisi'])
-            ->whereRaw("id_jasa IS NOT NULL AND id_jasa != '[]' AND id_jasa != '\"\"'");
+            ->whereNotNull('id_jasa')
+            ->whereRaw('LENGTH(id_jasa) > 2');
 
         if (!$isAdmin) {
             $base->where('id_user', $user->id_user);
