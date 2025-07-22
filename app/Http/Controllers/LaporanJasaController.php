@@ -12,7 +12,6 @@ class LaporanJasaController extends Controller
 {
     public function index(Request $request)
     {
-
         $user      = auth()->user();
         $isAdmin   = $user->level === 'admin';
 
@@ -30,38 +29,50 @@ class LaporanJasaController extends Controller
         $base = Transaksi::with(['konsumen','kasir','teknisi'])
               ->whereRaw("JSON_LENGTH(id_jasa) > 0");
 
-
         // Non-admin see only their own transactions
         if (! $isAdmin) {
             $base->where('id_user', $user->id_user);
         }
 
-        // Total tanpa filter
-        $totalAll = $base->get()
+        // Total tanpa filter - clone base query untuk menghindari konflik
+        $totalAllQuery = clone $base;
+        $totalAll = $totalAllQuery->get()
             ->sum(fn($trx) => $trx->jasaModels()->sum('harga_jasa'));
 
-        // Terapkan filter
-        $filtered = clone $base;
+        // Terapkan filter pada base query
+        if ($start) {
+            $base->whereDate('tanggal_transaksi', '>=', $start);
+        }
 
-        dd($filtered->get(), $filtered->getBindings(),
-            $start, $end, $search, $kasirId, $teknisiId);
-        if ($start)      $filtered->whereDate('tanggal_transaksi','>=',$start);
-        if ($end)        $filtered->whereDate('tanggal_transaksi','<=',$end);
-        if ($search)     $filtered->whereHas('konsumen', fn($q)=>
-                              $q->where('nama_konsumen','like',"%{$search}%")
-                                ->orWhere('no_kendaraan','like',"%{$search}%"));
-        if ($isAdmin && $kasirId)   $filtered->where('id_user',    $kasirId);
-        if ($teknisiId)             $filtered->where('id_teknisi', $teknisiId);
+        if ($end) {
+            $base->whereDate('tanggal_transaksi', '<=', $end);
+        }
 
-        // Total setelah filter
-        $totalFiltered = $filtered->get()
+        if ($search) {
+            $base->whereHas('konsumen', function($q) use ($search) {
+                $q->where('nama_konsumen', 'like', "%{$search}%")
+                  ->orWhere('no_kendaraan', 'like', "%{$search}%");
+            });
+        }
+
+        if ($isAdmin && $kasirId) {
+            $base->where('id_user', $kasirId);
+        }
+
+        if ($teknisiId) {
+            $base->where('id_teknisi', $teknisiId);
+        }
+
+        // Total setelah filter - clone untuk menghindari konflik dengan pagination
+        $totalFilteredQuery = clone $base;
+        $totalFiltered = $totalFilteredQuery->get()
             ->sum(fn($trx) => $trx->jasaModels()->sum('harga_jasa'));
 
         // Paginate & preserve filters
-        $transaksis = $filtered
+        $transaksis = $base
             ->orderByDesc('tanggal_transaksi')
             ->paginate(10)
-            ->appends(compact('start','end','search','kasirId','teknisiId'));
+            ->appends($request->only(['start_date', 'end_date', 'search', 'kasir_id', 'teknisi_id']));
 
         return view('laporan.jasa.index', compact(
             'transaksis','start','end','search',
@@ -84,17 +95,32 @@ class LaporanJasaController extends Controller
         $base = Transaksi::with(['konsumen','kasir','teknisi'])
             ->whereRaw("JSON_LENGTH(id_jasa) > 0");
 
-
         if (! $isAdmin) {
             $base->where('id_user', $user->id_user);
         }
-        if ($start)      $base->whereDate('tanggal_transaksi','>=',$start);
-        if ($end)        $base->whereDate('tanggal_transaksi','<=',$end);
-        if ($search)     $base->whereHas('konsumen', fn($q)=>
-                              $q->where('nama_konsumen','like',"%{$search}%")
-                                ->orWhere('no_kendaraan','like',"%{$search}%"));
-        if ($isAdmin && $kasirId)   $base->where('id_user',    $kasirId);
-        if ($teknisiId)             $base->where('id_teknisi', $teknisiId);
+
+        if ($start) {
+            $base->whereDate('tanggal_transaksi', '>=', $start);
+        }
+
+        if ($end) {
+            $base->whereDate('tanggal_transaksi', '<=', $end);
+        }
+
+        if ($search) {
+            $base->whereHas('konsumen', function($q) use ($search) {
+                $q->where('nama_konsumen', 'like', "%{$search}%")
+                  ->orWhere('no_kendaraan', 'like', "%{$search}%");
+            });
+        }
+
+        if ($isAdmin && $kasirId) {
+            $base->where('id_user', $kasirId);
+        }
+
+        if ($teknisiId) {
+            $base->where('id_teknisi', $teknisiId);
+        }
 
         $transaksis    = $base->orderByDesc('tanggal_transaksi')->get();
         $totalFiltered = $transaksis->sum(fn($trx) => $trx->jasaModels()->sum('harga_jasa'));
