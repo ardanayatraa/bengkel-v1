@@ -27,7 +27,7 @@ class LaporanJasaController extends Controller
 
         // Base query: transaksi jasa
         $base = Transaksi::with(['konsumen','kasir','teknisi']);
-
+dd($base->get());
         // Non-admin see only their own transactions
         if (! $isAdmin) {
             $base->where('id_user', $user->id_user);
