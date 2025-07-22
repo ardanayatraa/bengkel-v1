@@ -27,7 +27,7 @@ class LaporanJasaController extends Controller
 
         // Base query: transaksi jasa
         $base = Transaksi::with(['konsumen','kasir','teknisi'])
-            ->whereJsonLength('id_jasa','>',0);
+              ->whereRaw("JSON_LENGTH(id_jasa) > 0");
 
         // Non-admin see only their own transactions
         if (! $isAdmin) {
@@ -78,6 +78,7 @@ class LaporanJasaController extends Controller
 
         $base = Transaksi::with(['konsumen','kasir','teknisi'])
             ->whereRaw("JSON_LENGTH(id_jasa) > 0");
+
 
         if (! $isAdmin) {
             $base->where('id_user', $user->id_user);
