@@ -70,7 +70,7 @@ class Transaksi extends Model
    public function jasaModels()
 {
     $ids = $this->id_jasa;
-
+dd($ids);
     if (is_null($ids)) {
         $ids = [];
     } elseif (! is_array($ids)) {
