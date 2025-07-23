@@ -11,6 +11,7 @@ use App\Models\GajiTeknisi;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 use Barryvdh\DomPDF\Facade\Pdf;
 
 class TransaksiController extends Controller
@@ -151,8 +152,8 @@ class TransaksiController extends Controller
                 $statusPembayaran = $uangDiterima >= $total ? 'lunas' : 'belum bayar';
                 $kembalian = $uangDiterima >= $total ? $uangDiterima - $total : 0;
 
-                // Simpan transaksi
-                $transaksi = Transaksi::create([
+                // Siapkan data untuk disimpan
+                $transaksiData = [
                     'id_konsumen'              => $v['id_konsumen'],
                     'id_teknisi'               => $v['id_teknisi'] ?? null,
                     'id_barang'                => $barangJson,
@@ -168,6 +169,30 @@ class TransaksiController extends Controller
                     'id_user'                  => Auth::id(),
                     'kode_referral_digunakan'  => $kodeReferralDigunakan,
                     'diskon_referral'          => $diskonReferral,
+                ];
+
+                // Tambahkan point_discount hanya jika kolom ada di tabel
+                try {
+                    $columns = Schema::getColumnListing('transaksis');
+                    if (in_array('point_discount', $columns)) {
+                        $transaksiData['point_discount'] = $diskonPoin;
+                    }
+                } catch (\Exception $e) {
+                    // Jika gagal cek kolom, skip point_discount
+                    Log::warning('Cannot check columns for point_discount', ['error' => $e->getMessage()]);
+                }
+
+                // Simpan transaksi
+                $transaksi = Transaksi::create($transaksiData);
+
+                // Log data yang disimpan untuk debugging
+                Log::info('Transaksi disimpan', [
+                    'id_transaksi' => $transaksi->id_transaksi,
+                    'subtotal' => $subtotal,
+                    'diskon_poin' => $diskonPoin,
+                    'diskon_referral' => $diskonReferral,
+                    'total_harga' => $total,
+                    'kode_referral' => $kodeReferralDigunakan
                 ]);
 
                 // KURANGI STOK BARANG
@@ -178,7 +203,7 @@ class TransaksiController extends Controller
 
                 // Kurangi poin yang di-redeem untuk member
                 if ($redeemedPoints > 0) {
-                    $konsumen->decrement('jumlah_point', $redeemedPoints);
+                    $this->updateKonsumenPoints($konsumen, -$redeemedPoints);
                 }
 
                 // Tandai kode referral sudah digunakan
@@ -191,12 +216,12 @@ class TransaksiController extends Controller
                     strtolower($konsumen->keterangan) === 'member'
                     && !empty($v['id_jasa'])
                 ) {
-                    //
+                    // $this->updateKonsumenPoints($konsumen, 1);
                 }
 
                 // Berikan poin reward untuk pemberi kode referral
                 if ($konsumenPemberiReferral) {
-                    $konsumenPemberiReferral->increment('jumlah_point', 1);
+                    $this->updateKonsumenPoints($konsumenPemberiReferral, 1);
                 }
 
                 // Buat gaji teknisi otomatis jika ada teknisi dan jasa
@@ -312,7 +337,7 @@ class TransaksiController extends Controller
                 if (
                     strtolower($konsumen->keterangan) === 'member'
                     && !empty($v['redeem_points'])
-                    && $v['redeem_points'] <= $konsumen->t
+                    && $v['redeem_points'] <= $konsumen->jumlah_point
                     && $v['redeem_points'] % 10 === 0
                     && $v['redeem_points'] > 0
                 ) {
@@ -369,13 +394,34 @@ class TransaksiController extends Controller
 
         $barangs   = $transaksi->barangWithQty();
         $jasas     = $transaksi->jasaModels();
-        $subtotal  = $barangs->sum('subtotal') + collect($jasas)->sum(fn($j)=>$j->harga_jasa);
-        $diskonPoin = $transaksi->point_discount ?? 0;
-        $diskonReferral = $transaksi->diskon_referral ?? 0;
-        $kembalian = $transaksi->uang_diterima - $transaksi->total_harga;
+
+        // Hitung subtotal dari barang dan jasa
+        $subtotalBarang = $barangs->sum('subtotal');
+        $subtotalJasa = collect($jasas)->sum(fn($j)=>$j->harga_jasa);
+        $subtotal = $subtotalBarang + $subtotalJasa;
+
+        // PERBAIKAN: Ambil diskon referral langsung dari atribut transaksi
+        $diskonReferral = $transaksi->getAttribute('diskon_referral') ?? 0;
+
+        // PERBAIKAN: Hitung diskon poin dengan benar
+        // Cek apakah ada kolom point_discount di database
+        $attributes = $transaksi->getAttributes();
+        if (array_key_exists('point_discount', $attributes) && $transaksi->point_discount !== null) {
+            $diskonPoin = $transaksi->point_discount;
+        } else {
+            // Hitung dari selisih: subtotal - diskon_referral - total_harga = diskon_poin
+            $diskonPoin = max(0, $subtotal - $diskonReferral - $transaksi->total_harga);
+        }
+
+        $kembalian = max(0, $transaksi->uang_diterima - $transaksi->total_harga);
         $sisaPoint = $transaksi->konsumen->jumlah_point;
         $diskon = $diskonPoin + $diskonReferral;
-        $konsumenPemberiReferral = $transaksi->konsumenPemberiReferral();
+
+        // PERBAIKAN: Cek konsumen pemberi referral dengan cara yang lebih aman
+        $konsumenPemberiReferral = null;
+        if ($transaksi->kode_referral_digunakan) {
+            $konsumenPemberiReferral = \App\Models\Konsumen::where('kode_referral', $transaksi->kode_referral_digunakan)->first();
+        }
 
         return view('transaksi.show', compact(
             'transaksi','barangs','jasas','diskon',
@@ -441,10 +487,10 @@ class TransaksiController extends Controller
                 }
 
                 // Kembalikan point yang sudah digunakan (redeem points)
-                $diskonPoin = $transaksi->point_discount ?? 0;
+                $diskonPoin = $this->getPointDiscountFromTransaksi($transaksi);
                 if ($diskonPoin > 0) {
                     $redeemedPoints = ($diskonPoin / 10000) * 10;
-                    $konsumen->increment('jumlah_point', $redeemedPoints);
+                    $this->updateKonsumenPoints($konsumen, $redeemedPoints);
                 }
 
                 // Kurangi point yang diberikan untuk jasa (jika ada)
@@ -452,12 +498,12 @@ class TransaksiController extends Controller
                     strtolower($konsumen->keterangan) === 'member'
                     && !empty($transaksi->id_jasa)
                 ) {
-                    $konsumen->decrement('jumlah_point', 1);
+                    $this->updateKonsumenPoints($konsumen, -1);
                 }
 
                 // Kurangi point reward untuk pemberi referral (jika ada)
                 if ($konsumenPemberiReferral) {
-                    $konsumenPemberiReferral->decrement('jumlah_point', 1);
+                    $this->updateKonsumenPoints($konsumenPemberiReferral, -1);
                 }
 
                 // Hapus gaji teknisi terkait
@@ -479,6 +525,67 @@ class TransaksiController extends Controller
 
             return redirect()->back()
                 ->withErrors(['error' => 'Gagal menghapus transaksi: ' . $e->getMessage()]);
+        }
+    }
+
+    /**
+     * Safely update konsumen points
+     */
+    private function updateKonsumenPoints($konsumen, $pointChange)
+    {
+        try {
+            // Refresh model untuk memastikan data terbaru
+            $konsumen->refresh();
+
+            // Update points dengan cara yang aman
+            $currentPoints = $konsumen->jumlah_point ?? 0;
+            $newPoints = max(0, $currentPoints + $pointChange); // Tidak boleh negatif
+
+            $konsumen->update(['jumlah_point' => $newPoints]);
+
+            Log::info("Points updated", [
+                'konsumen_id' => $konsumen->id_konsumen,
+                'old_points' => $currentPoints,
+                'change' => $pointChange,
+                'new_points' => $newPoints
+            ]);
+
+            return true;
+        } catch (\Exception $e) {
+            Log::error("Failed to update points", [
+                'konsumen_id' => $konsumen->id_konsumen ?? 'unknown',
+                'point_change' => $pointChange,
+                'error' => $e->getMessage()
+            ]);
+            return false;
+        }
+    }
+
+    /**
+     * Get point discount value from transaksi with better logic
+     */
+    private function getPointDiscountFromTransaksi($transaksi)
+    {
+        // Cek apakah ada kolom point_discount
+        $attributes = $transaksi->getAttributes();
+        if (array_key_exists('point_discount', $attributes) && $transaksi->point_discount !== null) {
+            return $transaksi->point_discount;
+        }
+
+        // Fallback: hitung dari subtotal - diskon_referral - total_harga
+        try {
+            $barangs = $transaksi->barangWithQty();
+            $jasas = $transaksi->jasaModels();
+            $subtotal = $barangs->sum('subtotal') + collect($jasas)->sum('harga_jasa');
+            $diskonReferral = $transaksi->getAttribute('diskon_referral') ?? 0;
+
+            return max(0, $subtotal - $diskonReferral - $transaksi->total_harga);
+        } catch (\Exception $e) {
+            Log::error('Failed to calculate point discount', [
+                'transaksi_id' => $transaksi->id_transaksi,
+                'error' => $e->getMessage()
+            ]);
+            return 0;
         }
     }
 

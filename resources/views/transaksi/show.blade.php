@@ -18,7 +18,8 @@
                 <div><strong>Metode Bayar:</strong> {{ ucfirst($transaksi->metode_pembayaran) }}</div>
                 <div><strong>Status:</strong> {{ ucfirst($transaksi->status_service) }}</div>
                 <div><strong>Subtotal:</strong> Rp {{ number_format($subtotal, 0, ',', '.') }}</div>
-                <div><strong>Diskon:</strong> Rp {{ number_format($diskon, 0, ',', '.') }}</div>
+                <div><strong>Diskon:</strong> Rp {{ number_format($subtotal - $transaksi->total_harga, 0, ',', '.') }}
+                </div>
                 <div><strong>Total Harga:</strong> Rp {{ number_format($transaksi->total_harga, 0, ',', '.') }}</div>
                 <div><strong>Uang Diterima:</strong> Rp {{ number_format($transaksi->uang_diterima, 0, ',', '.') }}
                 </div>
