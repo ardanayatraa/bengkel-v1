@@ -196,7 +196,7 @@ class TransaksiController extends Controller
 
                 // Berikan poin reward untuk pemberi kode referral
                 if ($konsumenPemberiReferral) {
-                    $konsumenPemberiReferral->increment('t', 1);
+                    $konsumenPemberiReferral->increment('jumlah_point', 1);
                 }
 
                 // Buat gaji teknisi otomatis jika ada teknisi dan jasa
