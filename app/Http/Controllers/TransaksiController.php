@@ -191,12 +191,12 @@ class TransaksiController extends Controller
                     strtolower($konsumen->keterangan) === 'member'
                     && !empty($v['id_jasa'])
                 ) {
-                    $konsumen->increment('jumlah_point', 1);
+                    //
                 }
 
                 // Berikan poin reward untuk pemberi kode referral
                 if ($konsumenPemberiReferral) {
-                    $konsumenPemberiReferral->increment('jumlah_point', 1);
+                    $konsumenPemberiReferral->increment('t', 1);
                 }
 
                 // Buat gaji teknisi otomatis jika ada teknisi dan jasa
@@ -312,7 +312,7 @@ class TransaksiController extends Controller
                 if (
                     strtolower($konsumen->keterangan) === 'member'
                     && !empty($v['redeem_points'])
-                    && $v['redeem_points'] <= $konsumen->jumlah_point
+                    && $v['redeem_points'] <= $konsumen->t
                     && $v['redeem_points'] % 10 === 0
                     && $v['redeem_points'] > 0
                 ) {
