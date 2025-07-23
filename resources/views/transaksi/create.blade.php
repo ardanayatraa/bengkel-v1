@@ -2,16 +2,29 @@
 <x-app-layout>
     <div class="mx-auto sm:px-6 lg:px-8 py-6">
         <h2 class="text-lg font-semibold border-b pb-2 mb-6">Tambah Transaksi</h2>
+
+        {{-- Display Errors --}}
+        @if ($errors->any())
+            <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+                <ul>
+                    @foreach ($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
+
         <form action="{{ route('transaksi.store') }}" method="POST">
             @csrf
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
 
                 {{-- Konsumen --}}
                 <div>
-                    <label class="block mb-1 font-medium">Konsumen</label>
+                    <label class="block mb-1 font-medium">Konsumen <span class="text-red-500">*</span></label>
                     <div class="flex space-x-2">
                         <select id="id_konsumen" name="id_konsumen" required class="flex-1 p-2 border rounded"
                             data-points-json='@json($konsumens->pluck('jumlah_point', 'id_konsumen'))'>
+                            <option value="">-- Pilih Konsumen --</option>
                             @foreach ($konsumens as $k)
                                 <option value="{{ $k->id_konsumen }}" data-point="{{ $k->jumlah_point }}"
                                     {{ old('id_konsumen') == $k->id_konsumen ? 'selected' : '' }}>
@@ -22,7 +35,7 @@
                                 </option>
                             @endforeach
                         </select>
-                        <a href="{{ route('konsumen.create', ['return_to' => url()->current()]) }}" 
+                        <a href="{{ route('konsumen.create', ['return_to' => url()->current()]) }}"
                             class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 text-center">
                             + Konsumen
                         </a>
@@ -36,9 +49,9 @@
                 <div>
                     <label class="block mb-1 font-medium">Kode Referral (Opsional)</label>
                     <div class="flex space-x-2">
-                        <input type="text" name="kode_referral" id="kode_referral" value="{{ old('kode_referral') }}"
-                            class="flex-1 p-2 border rounded uppercase" placeholder="Masukkan kode referral"
-                            maxlength="10" />
+                        <input type="text" name="kode_referral" id="kode_referral"
+                            value="{{ old('kode_referral') }}" class="flex-1 p-2 border rounded uppercase"
+                            placeholder="Masukkan kode referral" maxlength="10" />
                         <button type="button" id="check_referral"
                             class="px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
                             Cek
@@ -86,8 +99,9 @@
 
                 {{-- Status Service --}}
                 <div>
-                    <label class="block mb-1 font-medium">Status Service</label>
+                    <label class="block mb-1 font-medium">Status Service <span class="text-red-500">*</span></label>
                     <select name="status_service" required class="w-full p-2 border rounded">
+                        <option value="">-- Pilih Status --</option>
                         @foreach (['proses', 'selesai', 'diambil'] as $s)
                             <option value="{{ $s }}" {{ old('status_service') == $s ? 'selected' : '' }}>
                                 {{ ucfirst($s) }}
@@ -101,7 +115,7 @@
 
                 {{-- Tanggal Transaksi --}}
                 <div>
-                    <label class="block mb-1 font-medium">Tanggal Transaksi</label>
+                    <label class="block mb-1 font-medium">Tanggal Transaksi <span class="text-red-500">*</span></label>
                     <input type="date" name="tanggal_transaksi"
                         value="{{ old('tanggal_transaksi', date('Y-m-d')) }}" required
                         class="w-full p-2 border rounded" />
@@ -112,9 +126,9 @@
 
                 {{-- Metode Pembayaran --}}
                 <div>
-                    <label class="block mb-1 font-medium">Metode Pembayaran</label>
+                    <label class="block mb-1 font-medium">Metode Pembayaran <span class="text-red-500">*</span></label>
                     <select name="metode_pembayaran" required class="w-full p-2 border rounded">
-                        <option value="">Pilih Metode</option>
+                        <option value="">-- Pilih Metode --</option>
                         @foreach (['Cash', 'QRIS'] as $m)
                             <option value="{{ $m }}"
                                 {{ old('metode_pembayaran') == $m ? 'selected' : '' }}>
@@ -130,7 +144,8 @@
                 {{-- Jasa --}}
                 <div class="md:col-span-2">
                     <label class="block mb-1 font-medium">Jasa (bisa pilih banyak)</label>
-                    <input type="text" id="search_jasa" placeholder="Cari jasa..." class="mb-2 w-full p-2 border rounded" />
+                    <input type="text" id="search_jasa" placeholder="Cari jasa..."
+                        class="mb-2 w-full p-2 border rounded" />
                     <div class="grid grid-cols-2 gap-2 p-2 border rounded max-h-40 overflow-auto" id="jasa_list">
                         @foreach ($jasas as $j)
                             <label class="flex items-center space-x-2 jasa-item">
@@ -159,22 +174,30 @@
                 {{-- Barang --}}
                 <div class="md:col-span-2">
                     <label class="block mb-1 font-medium">Barang (qty per item)</label>
-                    <input type="text" id="search_barang" placeholder="Cari barang..." class="mb-2 w-full p-2 border rounded" />
+                    <input type="text" id="search_barang" placeholder="Cari barang..."
+                        class="mb-2 w-full p-2 border rounded" />
                     <div class="grid grid-cols-2 gap-2 p-2 border rounded max-h-40 overflow-auto" id="barang_list">
                         @foreach ($barangs as $b)
                             <div class="flex items-center space-x-2 barang-item">
                                 <input type="checkbox" name="id_barang[]" value="{{ $b->id_barang }}"
-                                    data-harga="{{ $b->harga_jual }}" class="barang-cb"
+                                    data-harga="{{ $b->harga_jual }}" data-stok="{{ $b->stok }}"
+                                    class="barang-cb"
                                     {{ is_array(old('id_barang')) && in_array($b->id_barang, old('id_barang')) ? 'checked' : '' }} />
                                 <span class="flex-1">{{ $b->nama_barang }} — Rp
-                                    {{ number_format($b->harga_jual, 0, ',', '.') }}</span>
+                                    {{ number_format($b->harga_jual, 0, ',', '.') }}
+                                    <br><small class="text-gray-500">Stok: {{ $b->stok }}</small>
+                                </span>
                                 <input type="number" name="qty_barang[{{ $b->id_barang }}]"
-                                    class="qty-input w-16 p-1 border rounded text-sm"
+                                    value="{{ old('qty_barang.' . $b->id_barang, 1) }}" min="1"
+                                    max="{{ $b->stok }}" class="qty-input w-16 p-1 border rounded text-sm"
                                     {{ is_array(old('id_barang')) && in_array($b->id_barang, old('id_barang')) ? '' : 'disabled' }} />
                             </div>
                         @endforeach
                     </div>
                     @error('id_barang')
+                        <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
+                    @enderror
+                    @error('qty_barang.*')
                         <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
                     @enderror
                 </div>
@@ -206,9 +229,9 @@
 
                 {{-- Uang Diterima --}}
                 <div>
-                    <label class="block mb-1 font-medium">Uang Diterima</label>
-                    <input type="number" name="uang_diterima" id="uang_diterima" min="0"
-                        value="{{ old('uang_diterima', 0) }}" class="w-full p-2 border rounded" />
+                    <label class="block mb-1 font-medium">Uang Diterima <span class="text-red-500">*</span></label>
+                    <input type="number" name="uang_diterima" id="uang_diterima" min="0" step="0.01"
+                        value="{{ old('uang_diterima', 0) }}" required class="w-full p-2 border rounded" />
                     @error('uang_diterima')
                         <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
                     @enderror
@@ -217,47 +240,57 @@
                 {{-- Kembalian --}}
                 <div>
                     <label class="block mb-1 font-medium">Kembalian</label>
-                    <input type="text" id="kembalian_display" readonly class="w-full p-2 border rounded" />
+                    <input type="text" id="kembalian_display" readonly
+                        class="w-full p-2 border rounded bg-gray-100" value="Rp 0" />
                 </div>
 
             </div>
 
-            <div class="mt-6 flex justify-end">
+            <div class="mt-6 flex justify-end space-x-2">
+                <a href="{{ route('transaksi.index') }}"
+                    class="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600">
+                    Batal
+                </a>
                 <button type="submit" class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">
-                    Simpan
+                    Simpan Transaksi
                 </button>
             </div>
         </form>
     </div>
 
-
-
     <script>
+        // CSRF Token setup
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ||
+            '{{ csrf_token() }}';
+
         function formatRupiah(n) {
-            return 'Rp ' + n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+            if (isNaN(n) || n < 0) return 'Rp 0';
+            return 'Rp ' + Math.floor(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
         }
 
-        const pointsMap = JSON.parse(document.querySelector('#id_konsumen').dataset.pointsJson);
+        const pointsMap = JSON.parse(document.querySelector('#id_konsumen').dataset.pointsJson || '{}');
         const redeemInput = document.getElementById('redeem_points');
         const maxDisplay = document.getElementById('max_points_display');
         const sisaDisplay = document.getElementById('sisa_points_display');
         const jasaCheckboxes = document.querySelectorAll('.jasa-cb');
+        const barangCheckboxes = document.querySelectorAll('.barang-cb');
         const estimasiWrapper = document.getElementById('estimasi_wrapper');
 
         let diskonReferral = 0; // variable untuk menyimpan diskon referral
 
         function normalizeRedeem() {
-            let v = +redeemInput.value;
-            v = Math.floor(v / 10) * 10;
-            const max = +redeemInput.max || 0;
+            let v = parseInt(redeemInput.value) || 0;
+            v = Math.floor(v / 10) * 10; // Kelipatan 10
+            const max = parseInt(redeemInput.max) || 0;
             v = Math.min(Math.max(0, v), max);
             redeemInput.value = v;
         }
 
         function updateSisa() {
-            const id = +document.getElementById('id_konsumen').value;
+            const id = parseInt(document.getElementById('id_konsumen').value) || 0;
             const saldo = pointsMap[id] || 0;
-            sisaDisplay.textContent = saldo - (+redeemInput.value || 0);
+            const used = parseInt(redeemInput.value) || 0;
+            sisaDisplay.textContent = Math.max(0, saldo - used);
         }
 
         function toggleEstimasi() {
@@ -265,23 +298,48 @@
             estimasiWrapper.classList.toggle('hidden', !anyJasa);
         }
 
+        function validateStok() {
+            let valid = true;
+            barangCheckboxes.forEach(cb => {
+                if (cb.checked) {
+                    const qtyInput = cb.closest('div').querySelector('.qty-input');
+                    const qty = parseInt(qtyInput.value) || 1;
+                    const stok = parseInt(cb.dataset.stok) || 0;
+
+                    if (qty > stok) {
+                        qtyInput.classList.add('border-red-500');
+                        valid = false;
+                    } else {
+                        qtyInput.classList.remove('border-red-500');
+                    }
+                }
+            });
+            return valid;
+        }
+
         function calculate() {
             let subtotal = 0;
 
             // Hitung barang
-            document.querySelectorAll('.barang-cb:checked').forEach(cb => {
-                const harga = +cb.dataset.harga;
-                const qty = +cb.closest('div').querySelector('.qty-input').value || 1;
-                subtotal += harga * qty;
+            barangCheckboxes.forEach(cb => {
+                if (cb.checked) {
+                    const harga = parseFloat(cb.dataset.harga) || 0;
+                    const qtyInput = cb.closest('div').querySelector('.qty-input');
+                    const qty = parseInt(qtyInput.value) || 1;
+                    subtotal += harga * qty;
+                }
             });
 
             // Hitung jasa
             jasaCheckboxes.forEach(cb => {
-                if (cb.checked) subtotal += +cb.dataset.harga;
+                if (cb.checked) {
+                    const harga = parseFloat(cb.dataset.harga) || 0;
+                    subtotal += harga;
+                }
             });
 
             // Diskon poin
-            const redeemPts = +redeemInput.value || 0;
+            const redeemPts = parseInt(redeemInput.value) || 0;
             const diskonPoin = (redeemPts / 10) * 10000;
 
             // Total setelah semua diskon
@@ -295,11 +353,12 @@
 
             updateSisa();
             toggleEstimasi();
+            validateStok();
 
-            const bayar = +document.getElementById('uang_diterima').value || 0;
+            const bayar = parseFloat(document.getElementById('uang_diterima').value) || 0;
             const kembali = bayar - total;
             document.getElementById('kembalian_display').value =
-                kembali >= 0 ? formatRupiah(kembali) : '';
+                kembali >= 0 ? formatRupiah(kembali) : 'Kurang Rp ' + formatRupiah(Math.abs(kembali));
         }
 
         // Check referral code
@@ -328,8 +387,7 @@
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute(
-                            'content')
+                        'X-CSRF-TOKEN': csrfToken
                     },
                     body: JSON.stringify({
                         kode_referral: kodeReferral,
@@ -339,16 +397,19 @@
                 .then(response => response.json())
                 .then(data => {
                     if (data.valid) {
-                        diskonReferral = data.diskon;
-                        messageDiv.innerHTML = '<span class="text-green-600">' + data.message + '</span>';
+                        diskonReferral = data.diskon || 0;
+                        messageDiv.innerHTML = '<span class="text-green-600">' + (data.message ||
+                            'Kode referral valid') + '</span>';
                         document.getElementById('kode_referral').value = kodeReferral;
                     } else {
                         diskonReferral = 0;
-                        messageDiv.innerHTML = '<span class="text-red-600">' + data.message + '</span>';
+                        messageDiv.innerHTML = '<span class="text-red-600">' + (data.message ||
+                            'Kode referral tidak valid') + '</span>';
                     }
                     calculate();
                 })
                 .catch(error => {
+                    console.error('Error validating referral:', error);
                     diskonReferral = 0;
                     messageDiv.innerHTML = '<span class="text-red-600">Terjadi kesalahan saat validasi</span>';
                     calculate();
@@ -370,19 +431,24 @@
             }
         });
 
-        // Init listeners
+        // Event listeners
         document.getElementById('decrement_redeem').addEventListener('click', () => {
-            redeemInput.stepDown();
+            const current = parseInt(redeemInput.value) || 0;
+            redeemInput.value = Math.max(0, current - 10);
             normalizeRedeem();
             calculate();
         });
+
         document.getElementById('increment_redeem').addEventListener('click', () => {
-            redeemInput.stepUp();
+            const current = parseInt(redeemInput.value) || 0;
+            const max = parseInt(redeemInput.max) || 0;
+            redeemInput.value = Math.min(max, current + 10);
             normalizeRedeem();
             calculate();
         });
+
         document.getElementById('id_konsumen').addEventListener('change', () => {
-            const id = +document.getElementById('id_konsumen').value;
+            const id = parseInt(document.getElementById('id_konsumen').value) || 0;
             const saldo = pointsMap[id] || 0;
             maxDisplay.textContent = saldo;
             redeemInput.max = saldo;
@@ -396,26 +462,46 @@
             }
             calculate();
         });
+
         jasaCheckboxes.forEach(cb => {
             cb.addEventListener('change', () => {
                 toggleEstimasi();
                 calculate();
             });
         });
-        document.querySelectorAll('.barang-cb').forEach(cb => {
+
+        barangCheckboxes.forEach(cb => {
             cb.addEventListener('change', e => {
-                const qty = e.target.closest('div').querySelector('.qty-input');
-                qty.disabled = !e.target.checked;
+                const qtyInput = e.target.closest('div').querySelector('.qty-input');
+                qtyInput.disabled = !e.target.checked;
+                if (!e.target.checked) {
+                    qtyInput.value = 1;
+                }
                 calculate();
             });
         });
+
+        // Qty input listeners
+        document.querySelectorAll('.qty-input').forEach(input => {
+            input.addEventListener('input', calculate);
+            input.addEventListener('change', function() {
+                const min = parseInt(this.getAttribute('min')) || 1;
+                const max = parseInt(this.getAttribute('max')) || 999;
+                let value = parseInt(this.value) || min;
+                value = Math.min(Math.max(value, min), max);
+                this.value = value;
+                calculate();
+            });
+        });
+
         redeemInput.addEventListener('input', () => {
             normalizeRedeem();
             calculate();
         });
+
         document.getElementById('uang_diterima').addEventListener('input', calculate);
 
-        // SEARCH JASA
+        // Search functionality
         document.getElementById('search_jasa').addEventListener('input', function() {
             const val = this.value.toLowerCase();
             document.querySelectorAll('#jasa_list .jasa-item').forEach(function(item) {
@@ -423,7 +509,7 @@
                 item.style.display = text.includes(val) ? '' : 'none';
             });
         });
-        // SEARCH BARANG
+
         document.getElementById('search_barang').addEventListener('input', function() {
             const val = this.value.toLowerCase();
             document.querySelectorAll('#barang_list .barang-item').forEach(function(item) {
@@ -432,16 +518,37 @@
             });
         });
 
+        // Form submission validation
+        document.querySelector('form').addEventListener('submit', function(e) {
+            if (!validateStok()) {
+                e.preventDefault();
+                alert('Periksa kembali quantity barang. Ada yang melebihi stok tersedia.');
+                return false;
+            }
+
+            // Check if at least one item (barang atau jasa) is selected
+            const hasBarang = Array.from(barangCheckboxes).some(cb => cb.checked);
+            const hasJasa = Array.from(jasaCheckboxes).some(cb => cb.checked);
+
+            if (!hasBarang && !hasJasa) {
+                e.preventDefault();
+                alert('Pilih minimal satu barang atau jasa untuk transaksi.');
+                return false;
+            }
+        });
+
+        // Initialize on page load
         window.addEventListener('load', () => {
-            // disable all qty-input di awal
-            document.querySelectorAll('.barang-cb').forEach(cb => {
-                const qty = cb.closest('div').querySelector('.qty-input');
-                qty.disabled = !cb.checked;
+            // Disable all qty-input initially
+            barangCheckboxes.forEach(cb => {
+                const qtyInput = cb.closest('div').querySelector('.qty-input');
+                qtyInput.disabled = !cb.checked;
             });
+
             calculate();
-            
+
             // Auto select konsumen baru jika ada
-            @if(session('new_konsumen_id'))
+            @if (session('new_konsumen_id'))
                 const newKonsumenId = {{ session('new_konsumen_id') }};
                 const konsumenSelect = document.getElementById('id_konsumen');
                 if (konsumenSelect) {
@@ -450,7 +557,5 @@
                 }
             @endif
         });
-
-
     </script>
 </x-app-layout>

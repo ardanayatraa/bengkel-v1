@@ -9,23 +9,25 @@
                         Generate Otomatis
                     </button>
                 </form> --}}
-                <form action="{{ route('gaji-teknisi.bayar-semua') }}" method="POST" class="inline">
+                {{-- <form action="{{ route('gaji-teknisi.bayar-semua') }}" method="POST" class="inline">
                     @csrf
-                    <button type="submit" class="px-4 py-2 bg-red-800 text-white rounded hover:bg-red-900" 
+                    <button type="submit" class="px-4 py-2 bg-red-800 text-white rounded hover:bg-red-900"
                             onclick="return confirm('Yakin ingin membayar semua gaji yang belum dibayar?')">
                         Bayar Semua
                     </button>
-                </form>
-                <a href="{{ route('gaji-teknisi.create') }}" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+                </form> --}}
+                <a href="{{ route('gaji-teknisi.create') }}"
+                    class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
                     Tambah Gaji
                 </a>
-                <a href="{{ route('gaji-teknisi.laporan') }}" class="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700">
+                <a href="{{ route('gaji-teknisi.laporan') }}"
+                    class="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700">
                     Laporan
                 </a>
             </div>
         </div>
 
-        @if(session('success'))
+        @if (session('success'))
             <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
                 {{ session('success') }}
             </div>
@@ -37,7 +39,7 @@
             $countBelumDibayar = $gajiBelumDibayar->count();
         @endphp
 
-        @if($countBelumDibayar > 0)
+        @if ($countBelumDibayar > 0)
             <div class="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded mb-4">
                 <div class="flex items-center justify-between">
                     <div>
@@ -47,8 +49,8 @@
                     </div>
                     <form action="{{ route('gaji-teknisi.bayar-semua') }}" method="POST" class="inline">
                         @csrf
-                        <button type="submit" class="px-3 py-1 bg-red-800 text-white rounded hover:bg-red-900 text-sm" 
-                                onclick="return confirm('Yakin ingin membayar semua {{ $countBelumDibayar }} gaji sekaligus?')">
+                        <button type="submit" class="px-3 py-1 bg-red-800 text-white rounded hover:bg-red-900 text-sm"
+                            onclick="return confirm('Yakin ingin membayar semua {{ $countBelumDibayar }} gaji sekaligus?')">
                             Bayar Semua
                         </button>
                     </form>
@@ -128,34 +130,37 @@
                                 </div>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
-                                <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full 
-                                    {{ $gaji->status_pembayaran === 'sudah_dibayar' 
-                                        ? 'bg-green-100 text-green-800' 
+                                <span
+                                    class="inline-flex px-2 py-1 text-xs font-semibold rounded-full
+                                    {{ $gaji->status_pembayaran === 'sudah_dibayar'
+                                        ? 'bg-green-100 text-green-800'
                                         : 'bg-yellow-100 text-yellow-800' }}">
                                     {{ $gaji->status_pembayaran_formatted }}
                                 </span>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                 <div class="flex gap-2">
-                                    <a href="{{ route('gaji-teknisi.show', $gaji->id_gaji_teknisi) }}" 
-                                       class="text-blue-600 hover:text-blue-900">Detail</a>
-                                    <a href="{{ route('gaji-teknisi.edit', $gaji->id_gaji_teknisi) }}" 
-                                       class="text-indigo-600 hover:text-indigo-900">Edit</a>
-                                    
-                                    @if($gaji->status_pembayaran === 'belum_dibayar')
-                                        <form action="{{ route('gaji-teknisi.bayar', $gaji->id_gaji_teknisi) }}" method="POST" class="inline">
+                                    <a href="{{ route('gaji-teknisi.show', $gaji->id_gaji_teknisi) }}"
+                                        class="text-blue-600 hover:text-blue-900">Detail</a>
+                                    <a href="{{ route('gaji-teknisi.edit', $gaji->id_gaji_teknisi) }}"
+                                        class="text-indigo-600 hover:text-indigo-900">Edit</a>
+
+                                    @if ($gaji->status_pembayaran === 'belum_dibayar')
+                                        <form action="{{ route('gaji-teknisi.bayar', $gaji->id_gaji_teknisi) }}"
+                                            method="POST" class="inline">
                                             @csrf
                                             <button type="submit" class="text-green-600 hover:text-green-900">
                                                 Bayar
                                             </button>
                                         </form>
                                     @endif
-                                    
-                                    <form action="{{ route('gaji-teknisi.destroy', $gaji->id_gaji_teknisi) }}" method="POST" class="inline">
+
+                                    <form action="{{ route('gaji-teknisi.destroy', $gaji->id_gaji_teknisi) }}"
+                                        method="POST" class="inline">
                                         @csrf
                                         @method('DELETE')
-                                        <button type="submit" class="text-red-600 hover:text-red-900" 
-                                                onclick="return confirm('Yakin ingin menghapus gaji ini?')">
+                                        <button type="submit" class="text-red-600 hover:text-red-900"
+                                            onclick="return confirm('Yakin ingin menghapus gaji ini?')">
                                             Hapus
                                         </button>
                                     </form>
@@ -173,4 +178,4 @@
             </table>
         </div>
     </div>
-</x-app-layout> 
+</x-app-layout>
