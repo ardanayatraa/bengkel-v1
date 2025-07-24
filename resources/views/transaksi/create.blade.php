@@ -178,18 +178,23 @@
                         class="mb-2 w-full p-2 border rounded" />
                     <div class="grid grid-cols-2 gap-2 p-2 border rounded max-h-40 overflow-auto" id="barang_list">
                         @foreach ($barangs as $b)
-                            <div class="flex items-center space-x-2 barang-item">
+                            <div
+                                class="flex items-center space-x-2 barang-item {{ $b->stok <= 0 ? 'opacity-50' : '' }}">
                                 <input type="checkbox" name="id_barang[]" value="{{ $b->id_barang }}"
                                     data-harga="{{ $b->harga_jual }}" data-stok="{{ $b->stok }}"
-                                    class="barang-cb"
+                                    class="barang-cb" {{ $b->stok <= 0 ? 'disabled' : '' }}
                                     {{ is_array(old('id_barang')) && in_array($b->id_barang, old('id_barang')) ? 'checked' : '' }} />
                                 <span class="flex-1">{{ $b->nama_barang }} — Rp
                                     {{ number_format($b->harga_jual, 0, ',', '.') }}
-                                    <br><small class="text-gray-500">Stok: {{ $b->stok }}</small>
+                                    <br><small
+                                        class="{{ $b->stok <= 0 ? 'text-red-500 font-bold' : 'text-gray-500' }}">
+                                        Stok: {{ $b->stok }} {{ $b->stok <= 0 ? '(Kosong)' : '' }}
+                                    </small>
                                 </span>
                                 <input type="number" name="qty_barang[{{ $b->id_barang }}]"
                                     value="{{ old('qty_barang.' . $b->id_barang, 1) }}" min="1"
                                     max="{{ $b->stok }}" class="qty-input w-16 p-1 border rounded text-sm"
+                                    {{ $b->stok <= 0 ? 'disabled' : '' }}
                                     {{ is_array(old('id_barang')) && in_array($b->id_barang, old('id_barang')) ? '' : 'disabled' }} />
                             </div>
                         @endforeach
