@@ -97,7 +97,9 @@ class TransaksiController extends Controller
 
                     // Cek stok tersedia
                     if ($barang->stok < $qty) {
-                        throw new \Exception("Stok barang {$barang->nama_barang} tidak mencukupi. Stok tersedia: {$barang->stok}, diminta: {$qty}");
+                        return redirect()->back()
+                            ->withInput()
+                            ->withErrors(['error' => "Stok barang {$barang->nama_barang} tidak mencukupi. Stok tersedia: {$barang->stok}, diminta: {$qty}"]);
                     }
 
                     $totalBarang += $barang->harga_jual * $qty;
@@ -319,6 +321,14 @@ class TransaksiController extends Controller
                 $totalBarang = 0;
                 foreach ($barangJson as $idBarang => $qty) {
                     $barang = Barang::findOrFail($idBarang);
+
+                    // Cek stok tersedia
+                    if ($barang->stok < $qty) {
+                        return redirect()->back()
+                            ->withInput()
+                            ->withErrors(['error' => "Stok barang {$barang->nama_barang} tidak mencukupi. Stok tersedia: {$barang->stok}, diminta: {$qty}"]);
+                    }
+
                     $totalBarang += $barang->harga_jual * $qty;
                 }
 

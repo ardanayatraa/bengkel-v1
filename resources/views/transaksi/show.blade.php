@@ -3,10 +3,18 @@
     <div class="mx-auto sm:px-6 lg:px-8 py-6">
         <div class="flex justify-between items-center mb-6">
             <h2 class="text-lg font-semibold">Detail Transaksi #{{ $transaksi->id_transaksi }}</h2>
-            <a href="{{ route('transaksi.print', $transaksi->id_transaksi) }}"
-                class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
-                Print Nota
-            </a>
+            <div class="flex space-x-2">
+                @if ($transaksi->teknisi && !empty($transaksi->id_jasa))
+                    <a href="{{ route('gaji-teknisi.create', ['id_transaksi' => $transaksi->id_transaksi]) }}"
+                        class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">
+                        Tambah Gaji
+                    </a>
+                @endif
+                <a href="{{ route('transaksi.print', $transaksi->id_transaksi) }}"
+                    class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+                    Print Nota
+                </a>
+            </div>
         </div>
 
         <div class="bg-white shadow rounded-lg p-6">
