@@ -73,35 +73,42 @@ class TransaksiController extends Controller
             'kode_referral'       => 'nullable|string|max:10',
         ]);
 
+        // Build JSON barang=>qty dengan cara yang benar
+        $barangJson = [];
+        if (!empty($v['id_barang']) && !empty($v['qty_barang'])) {
+            foreach ($v['id_barang'] as $idBarang) {
+                // Pastikan qty ada dan valid
+                $qty = isset($v['qty_barang'][$idBarang]) ? (int)$v['qty_barang'][$idBarang] : 1;
+                if ($qty > 0) {
+                    $barangJson[$idBarang] = $qty;
+                }
+            }
+        }
+
+        // Validasi stok sebelum memulai transaksi
+        $errors = [];
+        foreach ($barangJson as $idBarang => $qty) {
+            $barang = Barang::findOrFail($idBarang);
+            if ($barang->stok < $qty) {
+                $errors[] = "Stok barang {$barang->nama_barang} tidak mencukupi. Stok tersedia: {$barang->stok}, diminta: {$qty}";
+            }
+        }
+
+        if (count($errors) > 0) {
+            return redirect()->back()
+                ->withInput()
+                ->withErrors(['error' => $errors]);
+        }
+
         // Gunakan database transaction untuk memastikan konsistensi data
         try {
-            return DB::transaction(function () use ($v) {
+            return DB::transaction(function () use ($v, $barangJson) {
                 $konsumen = Konsumen::findOrFail($v['id_konsumen']);
-
-                // PERBAIKAN: Build JSON barang=>qty dengan cara yang benar
-                $barangJson = [];
-                if (!empty($v['id_barang']) && !empty($v['qty_barang'])) {
-                    foreach ($v['id_barang'] as $idBarang) {
-                        // Pastikan qty ada dan valid
-                        $qty = isset($v['qty_barang'][$idBarang]) ? (int)$v['qty_barang'][$idBarang] : 1;
-                        if ($qty > 0) {
-                            $barangJson[$idBarang] = $qty;
-                        }
-                    }
-                }
 
                 // Hitung total barang
                 $totalBarang = 0;
                 foreach ($barangJson as $idBarang => $qty) {
                     $barang = Barang::findOrFail($idBarang);
-
-                    // Cek stok tersedia
-                    if ($barang->stok < $qty) {
-                        return redirect()->back()
-                            ->withInput()
-                            ->withErrors(['error' => "Stok barang {$barang->nama_barang} tidak mencukupi. Stok tersedia: {$barang->stok}, diminta: {$qty}"]);
-                    }
-
                     $totalBarang += $barang->harga_jual * $qty;
                 }
 
@@ -301,34 +308,41 @@ class TransaksiController extends Controller
             'redeem_points'       => 'nullable|integer|min:0',
         ]);
 
+        // Build JSON barang=>qty dengan perbaikan yang sama
+        $barangJson = [];
+        if (!empty($v['id_barang']) && !empty($v['qty_barang'])) {
+            foreach ($v['id_barang'] as $idBarang) {
+                $qty = isset($v['qty_barang'][$idBarang]) ? (int)$v['qty_barang'][$idBarang] : 1;
+                if ($qty > 0) {
+                    $barangJson[$idBarang] = $qty;
+                }
+            }
+        }
+
+        // Validasi stok sebelum memulai transaksi
+        $errors = [];
+        foreach ($barangJson as $idBarang => $qty) {
+            $barang = Barang::findOrFail($idBarang);
+            if ($barang->stok < $qty) {
+                $errors[] = "Stok barang {$barang->nama_barang} tidak mencukupi. Stok tersedia: {$barang->stok}, diminta: {$qty}";
+            }
+        }
+
+        if (count($errors) > 0) {
+            return redirect()->back()
+                ->withInput()
+                ->withErrors(['error' => $errors]);
+        }
+
         try {
-            return DB::transaction(function () use ($v, $id) {
+            return DB::transaction(function () use ($v, $id, $barangJson) {
                 $konsumen = Konsumen::findOrFail($v['id_konsumen']);
                 $transaksi = Transaksi::findOrFail($id);
-
-                // Build JSON barang=>qty dengan perbaikan yang sama
-                $barangJson = [];
-                if (!empty($v['id_barang']) && !empty($v['qty_barang'])) {
-                    foreach ($v['id_barang'] as $idBarang) {
-                        $qty = isset($v['qty_barang'][$idBarang]) ? (int)$v['qty_barang'][$idBarang] : 1;
-                        if ($qty > 0) {
-                            $barangJson[$idBarang] = $qty;
-                        }
-                    }
-                }
 
                 // Hitung subtotal
                 $totalBarang = 0;
                 foreach ($barangJson as $idBarang => $qty) {
                     $barang = Barang::findOrFail($idBarang);
-
-                    // Cek stok tersedia
-                    if ($barang->stok < $qty) {
-                        return redirect()->back()
-                            ->withInput()
-                            ->withErrors(['error' => "Stok barang {$barang->nama_barang} tidak mencukupi. Stok tersedia: {$barang->stok}, diminta: {$qty}"]);
-                    }
-
                     $totalBarang += $barang->harga_jual * $qty;
                 }
 
