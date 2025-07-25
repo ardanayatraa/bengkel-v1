@@ -11,15 +11,37 @@ use Illuminate\Support\Facades\DB;
 
 class GajiTeknisiController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $gajiTeknisis = GajiTeknisi::with(['teknisi', 'transaksi', 'jasa'])
-            ->orderByDesc('tanggal_kerja')
-            ->get();
+        $query = GajiTeknisi::with(['teknisi', 'transaksi', 'jasa']);
 
-        return view('gaji-teknisi.index', compact('gajiTeknisis'));
+        // Filter berdasarkan teknisi
+        if ($request->filled('id_teknisi')) {
+            $query->where('id_teknisi', $request->id_teknisi);
+        }
+
+        // Filter berdasarkan status pembayaran
+        if ($request->filled('status_pembayaran')) {
+            $query->where('status_pembayaran', $request->status_pembayaran);
+        }
+
+        // Filter berdasarkan tanggal mulai
+        if ($request->filled('tanggal_mulai')) {
+            $query->where('tanggal_kerja', '>=', $request->tanggal_mulai);
+        }
+
+        // Filter berdasarkan tanggal akhir
+        if ($request->filled('tanggal_akhir')) {
+            $query->where('tanggal_kerja', '<=', $request->tanggal_akhir);
+        }
+
+        $gajiTeknisis = $query->orderByDesc('tanggal_kerja')->get();
+
+        // Ambil data teknisi untuk dropdown filter
+        $teknisis = Teknisi::all();
+
+        return view('gaji-teknisi.index', compact('gajiTeknisis', 'teknisis'));
     }
-
     public function create()
     {
         $teknisis = Teknisi::all();
@@ -108,7 +130,7 @@ class GajiTeknisiController extends Controller
     public function bayarGaji($id)
     {
         $gajiTeknisi = GajiTeknisi::findOrFail($id);
-        
+
         $gajiTeknisi->update([
             'status_pembayaran' => 'sudah_dibayar',
             'tanggal_pembayaran' => now()->toDateString(),
@@ -124,7 +146,7 @@ class GajiTeknisiController extends Controller
     public function bayarSemuaGaji()
     {
         $gajiBelumDibayar = GajiTeknisi::where('status_pembayaran', 'belum_dibayar')->get();
-        
+
         $count = 0;
         foreach ($gajiBelumDibayar as $gaji) {
             $gaji->update([
@@ -219,10 +241,10 @@ class GajiTeknisiController extends Controller
         $totalSudahDibayar = $gajiTeknisis->where('status_pembayaran', 'sudah_dibayar')->sum('jumlah_gaji');
 
         return view('gaji-teknisi.laporan', compact(
-            'gajiTeknisis', 
-            'teknisis', 
-            'totalGaji', 
-            'totalBelumDibayar', 
+            'gajiTeknisis',
+            'teknisis',
+            'totalGaji',
+            'totalBelumDibayar',
             'totalSudahDibayar'
         ));
     }

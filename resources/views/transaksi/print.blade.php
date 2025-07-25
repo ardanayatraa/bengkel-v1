@@ -159,7 +159,7 @@
             </div>
             <div class="invoice-info">INVOICE #{{ $transaksi->id_transaksi }}</div>
             <div class="invoice-info">
-                {{ \Carbon\Carbon::parse($transaksi->tanggal_transaksi)->format('d/m/Y H:i') }}
+                {{ \Carbon\Carbon::parse($transaksi->tanggal_transaksi)->format('d/m/Y') }}
             </div>
         </div>
 

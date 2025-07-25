@@ -89,7 +89,11 @@ class TransaksiTable extends DataTableComponent
 
             Column::make('Tanggal Transaksi', 'tanggal_transaksi')
                 ->sortable()
-                ->searchable(),
+                ->searchable()
+                ->format(function ($value) {
+                    return \Carbon\Carbon::parse($value)->format('d-m-Y'); // atau 'Y-m-d'
+                }),
+
 
             Column::make('Total Harga', 'total_harga')
                 ->sortable()
